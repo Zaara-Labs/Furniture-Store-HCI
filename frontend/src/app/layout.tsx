@@ -17,7 +17,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "PNEUMETRA - Elegant Furniture Store",
+  title: "FABRIQUÉ - Elegant Furniture Store",
   description: "Discover beautiful, timeless furniture pieces for your home with exceptional craftsmanship and design.",
 };
 
