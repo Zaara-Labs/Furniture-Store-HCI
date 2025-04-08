@@ -1,2 +1,4 @@
 # Furniture-Store-HCI
-This repository contains 3D furniture store website for HCI module coursework
+This repository contains HCI module coursework projcet - 3D furniture store website
+
+![Pneumetra](Project%20Assests/banner%20image.jpg)
