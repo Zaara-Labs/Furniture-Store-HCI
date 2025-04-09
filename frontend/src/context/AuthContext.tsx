@@ -2,8 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Models } from 'appwrite';
+import { appwriteService } from '@/services/appwrite';
 import { useRouter } from 'next/navigation';
-import { login, logout, createAccount, getCurrentUser } from '@/app/actions/auth';
 
 // Define types for Auth context
 type AuthContextType = {
@@ -43,9 +43,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const checkAuthStatus = async (): Promise<boolean> => {
     try {
       setLoading(true);
-      const { user, success } = await getCurrentUser();
-      if (success && user) {
-        setUser(user);
+      const currentUser = await appwriteService.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
         return true;
       } else {
         setUser(null);
@@ -59,19 +59,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Login function - now using server action
-  const handleLogin = async (email: string, password: string): Promise<void> => {
+  // Login function
+  const login = async (email: string, password: string): Promise<void> => {
     try {
       setLoading(true);
-      const result = await login({ email, password });
-      
-      if (result.success) {
-        await checkAuthStatus();
-        router.push('/');
-      } else {
-        throw new Error(result.error || 'Login failed');
-      }
-    } catch (error: any) {
+      await appwriteService.login(email, password);
+      await checkAuthStatus();
+      router.push('/');
+    } catch (error) {
       console.error("Login Error:", error);
       throw error;
     } finally {
@@ -79,19 +74,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Signup function - now using server action
-  const handleSignup = async (email: string, password: string, name: string): Promise<void> => {
+  // Signup function
+  const signup = async (email: string, password: string, name: string): Promise<void> => {
     try {
       setLoading(true);
-      const result = await createAccount({ email, password, name });
-      
-      if (result.success) {
-        await checkAuthStatus();
-        router.push('/');
-      } else {
-        throw new Error(result.error || 'Signup failed');
-      }
-    } catch (error: any) {
+      await appwriteService.createAccount(email, password, name);
+      await checkAuthStatus();
+      router.push('/');
+    } catch (error) {
       console.error("Signup Error:", error);
       throw error;
     } finally {
@@ -99,19 +89,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Logout function - now using server action
-  const handleLogout = async (): Promise<void> => {
+  // Logout function
+  const logout = async (): Promise<void> => {
     try {
       setLoading(true);
-      const result = await logout();
-      
-      if (result.success) {
-        setUser(null);
-        router.push('/');
-      } else {
-        throw new Error(result.error || 'Logout failed');
-      }
-    } catch (error: any) {
+      await appwriteService.logout();
+      setUser(null);
+      router.push('/');
+    } catch (error) {
       console.error("Logout Error:", error);
       throw error;
     } finally {
@@ -123,9 +108,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const value = {
     user,
     loading,
-    login: handleLogin,
-    signup: handleSignup,
-    logout: handleLogout,
+    login,
+    signup,
+    logout,
     checkAuthStatus,
   };
 
