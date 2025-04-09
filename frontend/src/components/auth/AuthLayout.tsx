@@ -20,7 +20,7 @@ export default function AuthLayout({
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <div className="flex-grow flex items-center justify-center py-20 px-4 mt-16">
+      <div className="flex-grow flex items-center justify-center py-20 px-4 mt-16 bg-[#f8f9fa]">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-8">
             <h2 className="text-2xl font-serif font-medium text-center text-gray-800 mb-2">{heading}</h2>
