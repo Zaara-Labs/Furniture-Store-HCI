@@ -3,9 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, logout, loading } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
     <nav className="bg-white py-4 px-6 shadow-sm fixed w-full z-50">
@@ -72,22 +82,56 @@ export default function Navbar() {
               />
             </svg>
           </button>
-          <button className="text-gray-700 hover:text-amber-800 transition-colors">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-          </button>
+          
+          {/* Authentication buttons */}
+          {!loading && (
+            user ? (
+              <div className="relative group">
+                <button className="flex items-center text-gray-700 hover:text-amber-800 transition-colors focus:outline-none">
+                  <span className="mr-1">{user.name?.split(' ')[0] || 'Account'}</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <Link href="/account" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    My Account
+                  </Link>
+                  <Link href="/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Orders
+                  </Link>
+                  <Link href="/wishlist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Wishlist
+                  </Link>
+                  <button 
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="text-gray-700 hover:text-amber-800 transition-colors"
+              >
+                Sign in
+              </Link>
+            )
+          )}
+          
           <button className="text-gray-700 hover:text-amber-800 transition-colors relative">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -170,6 +214,37 @@ export default function Navbar() {
               Contact
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
             </Link>
+            
+            {/* Auth links for mobile */}
+            {!loading && (
+              !user ? (
+                <Link
+                  href="/auth/login"
+                  className="text-gray-700 hover:text-amber-800 relative group transition-colors py-1"
+                >
+                  Sign in
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/account"
+                    className="text-gray-700 hover:text-amber-800 relative group transition-colors py-1"
+                  >
+                    My Account
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="text-left text-gray-700 hover:text-amber-800 relative group transition-colors py-1"
+                  >
+                    Sign out
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
+                  </button>
+                </>
+              )
+            )}
+            
             <div className="flex space-x-4 pt-2">
               <button className="text-gray-700 hover:text-amber-800 transition-colors">
                 <svg
@@ -184,22 +259,6 @@ export default function Navbar() {
                     strokeLinejoin="round"
                     strokeWidth={2}
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </button>
-              <button className="text-gray-700 hover:text-amber-800 transition-colors">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                   />
                 </svg>
               </button>
