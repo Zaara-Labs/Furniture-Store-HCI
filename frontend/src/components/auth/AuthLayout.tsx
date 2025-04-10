@@ -3,14 +3,14 @@ import Link from 'next/link';
 import Navbar from '../Navbar';
 import Footer from '../Footer';
 
-export default function AuthLayout({ 
+export default function AuthLayout({
   children, 
   heading, 
   subheading, 
   linkText, 
   linkHref 
 }: { 
-  children: React.ReactNode; 
+  children: React.ReactNode;
   heading: string;
   subheading: string;
   linkText: string;
@@ -29,7 +29,7 @@ export default function AuthLayout({
             {children}
             
             <div className="text-center mt-6">
-              <Link 
+              <Link
                 href={linkHref}
                 className="text-amber-800 hover:text-amber-900 font-medium"
               >

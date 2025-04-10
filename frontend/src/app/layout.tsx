@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { CartProvider } from "@/context/CartContext";
+import { Toaster } from "react-hot-toast";
 
 // Load Inter font for regular text
 const inter = Inter({ 
@@ -31,7 +33,10 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body className="antialiased">
         <AuthProvider>
-          {children}
+          <CartProvider>
+            {children}
+            <Toaster position="bottom-right" />
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

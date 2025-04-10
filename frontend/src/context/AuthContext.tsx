@@ -1,18 +1,25 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Models } from 'appwrite';
-import { appwriteService } from '@/services/appwrite';
-import { useRouter } from 'next/navigation';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { appwriteService } from "@/services/appwrite";
 
-// Define types for Auth context
+// Define User type based on your Appwrite user structure
+type User = {
+  $id: string;
+  email: string;
+  name: string;
+  // Add other fields as needed
+};
+
+// Define AuthContext type
 type AuthContextType = {
-  user: Models.User<Models.Preferences> | null;
+  user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
-  checkAuthStatus: () => Promise<boolean>;
+  checkAuthStatus: () => Promise<void>;
 };
 
 // Create context with default values
@@ -22,7 +29,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   signup: async () => {},
   logout: async () => {},
-  checkAuthStatus: async () => false,
+  checkAuthStatus: async () => {},
 });
 
 // Custom hook to use the auth context
@@ -30,30 +37,29 @@ export const useAuth = () => useContext(AuthContext);
 
 // Provider component
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
-
-  // Check if user is logged in when the component mounts
+  
+  // Check authentication status when component mounts
   useEffect(() => {
     checkAuthStatus();
   }, []);
 
-  // Check authentication status
-  const checkAuthStatus = async (): Promise<boolean> => {
+  // Function to check if user is authenticated
+  const checkAuthStatus = async (): Promise<void> => {
     try {
       setLoading(true);
       const currentUser = await appwriteService.getCurrentUser();
+      
       if (currentUser) {
         setUser(currentUser);
-        return true;
       } else {
         setUser(null);
-        return false;
       }
     } catch (error) {
-      console.error("Auth Status Error:", error);
-      return false;
+      console.error("Error checking authentication status:", error);
+      setUser(null);
     } finally {
       setLoading(false);
     }
