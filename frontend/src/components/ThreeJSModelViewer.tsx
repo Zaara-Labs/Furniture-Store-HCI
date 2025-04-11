@@ -6,9 +6,20 @@ import { OrbitControls, PerspectiveCamera, useGLTF, Environment, Loader, useText
 import { Suspense } from 'react';
 import * as THREE from 'three';
 import { getGPUTier } from 'detect-gpu';
-import type { PartytownConfig } from '@builder.io/partytown';
 
-const QUALITY_PRESETS = {
+// Define quality settings type
+interface QualitySettings {
+  shadows: boolean;
+  pixelRatio: number;
+  antialias: boolean;
+  envMapIntensity: number;
+  lightIntensity: number;
+  maxTextureSize: number;
+  useSimpleMaterials: boolean;
+}
+
+// Define quality presets
+const QUALITY_PRESETS: Record<string, QualitySettings> = {
   // Low-end devices
   low: {
     shadows: false,
@@ -43,9 +54,9 @@ const QUALITY_PRESETS = {
 
 // Hardware capability detection hook
 function useDeviceCapabilities() {
-  const [tier, setTier] = useState('medium');
-  const [qualitySettings, setQualitySettings] = useState(QUALITY_PRESETS.medium);
-  const [isLoading, setIsLoading] = useState(true);
+  const [tier, setTier] = useState<string>('medium');
+  const [qualitySettings, setQualitySettings] = useState<QualitySettings>(QUALITY_PRESETS.medium);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     async function detectCapabilities() {
@@ -79,7 +90,7 @@ function useDeviceCapabilities() {
         console.log(`Device capabilities detected: ${deviceTier} tier (GPU Tier: ${gpuTier.tier}, Mobile: ${gpuTier.isMobile})`);
         
         setTier(deviceTier);
-        setQualitySettings(QUALITY_PRESETS[deviceTier]);
+        setQualitySettings(QUALITY_PRESETS[deviceTier as keyof typeof QUALITY_PRESETS]);
       } catch (error) {
         console.error("Error detecting device capabilities:", error);
         // Fall back to medium quality
@@ -96,21 +107,41 @@ function useDeviceCapabilities() {
   return { tier, qualitySettings, isLoading };
 }
 
-function Model({ modelPath, qualitySettings }) {
-  const { scene } = useGLTF(modelPath);
-  const modelRef = useRef();
+// Model component props
+interface ModelProps {
+  modelPath: string;
+  qualitySettings: QualitySettings;
+  selectedColor: string | null;
+}
+
+function Model({ modelPath, qualitySettings, selectedColor }: ModelProps) {
+  const gltf = useGLTF(modelPath);
+  const { scene } = gltf;
+  const modelRef = useRef<THREE.Group>(null);
+  const fabricMaterials = useRef<THREE.Material[]>([]);
   
   // Apply quality settings to the model
   useEffect(() => {
     if (modelRef.current && qualitySettings) {
-      modelRef.current.traverse((node) => {
+      modelRef.current.traverse((node: any) => {
         if (node instanceof THREE.Mesh) {
           // Applying shadow settings
           node.castShadow = qualitySettings.shadows;
           node.receiveShadow = qualitySettings.shadows;
           
-          // Applying material optimizations
+          // Identify node material to apply colors for
           if (node.material) {
+            console.log(`Material name: ${node.material.name}`);
+            const materialName = node.material.name.toLowerCase();
+            if (materialName.includes('fabric') || 
+                materialName.includes('upholstery') || 
+                materialName.includes('textile') ||
+                materialName.includes('base') ||
+                materialName.includes('cloth')) {
+              fabricMaterials.current.push(node.material);
+            }
+            
+            // Applying material optimizations
             if (qualitySettings.useSimpleMaterials) {
               // Convert complex materials to basic materials for low-end devices
               if (node.material instanceof THREE.MeshStandardMaterial) {
@@ -133,6 +164,18 @@ function Model({ modelPath, qualitySettings }) {
     }
   }, [scene, qualitySettings]);
 
+  // Apply color changes to fabric materials when selectedColor changes
+  useEffect(() => {
+    if (selectedColor && fabricMaterials.current.length > 0) {
+      const newColor = new THREE.Color(selectedColor);
+      fabricMaterials.current.forEach((material: any) => {
+        if (material && material.color) {
+          material.color = newColor;
+        }
+      });
+    }
+  }, [selectedColor]);
+
   // Center and scale the model on load
   React.useEffect(() => {
     if (modelRef.current) {
@@ -141,10 +184,12 @@ function Model({ modelPath, qualitySettings }) {
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
       
-      // Center the model
+      // Center the model horizontally (x and z)
       modelRef.current.position.x = -center.x;
       modelRef.current.position.z = -center.z;
-      modelRef.current.position.y = -box.min.y - 0.5 + 0.01;;
+      
+      // Position model on the ground plane (y=-0.5) with small offset to prevent z-fighting
+      modelRef.current.position.y = -box.min.y - 0.5 + 0.01;
       
       // Scale model to reasonable size
       const maxDim = Math.max(size.x, size.y, size.z);
@@ -156,8 +201,12 @@ function Model({ modelPath, qualitySettings }) {
   return <primitive ref={modelRef} object={scene} />;
 }
 
+interface GroundProps {
+  qualitySettings: QualitySettings;
+}
+
 // Simple ground component with quality-based rendering
-function Ground({ qualitySettings }) {
+function Ground({ qualitySettings }: GroundProps) {
   // Use simpler material for low-end devices
   const material = qualitySettings.useSimpleMaterials 
     ? <meshBasicMaterial color="#eeeeee" />
@@ -220,7 +269,7 @@ function PerformanceMonitor() {
     const canvas = gl.domElement;
     
     // Handle WebGL context loss events
-    const handleContextLoss = (event) => {
+    const handleContextLoss = (event: Event) => {
       event.preventDefault();
       console.warn('WebGL context lost - possible performance issue');
     };
@@ -259,6 +308,46 @@ function PerformanceMonitor() {
   return null;
 }
 
+interface ColorPaletteProps {
+  onSelectColor: (color: string) => void;
+  selectedColor: string | null;
+}
+
+// Color palette component for fabric colors
+function ColorPalette({ onSelectColor, selectedColor }: ColorPaletteProps) {
+  // Fixed color palette for fabric options
+  const colorOptions = [
+    { name: "Navy Blue", hex: "#0A1172" },
+    { name: "Charcoal Gray", hex: "#36454F" },
+    { name: "Beige", hex: "#F5F5DC" },
+    { name: "Forest Green", hex: "#228B22" },
+    { name: "Burgundy", hex: "#800020" },
+    { name: "Light Gray", hex: "#D3D3D3" },
+    { name: "Mustard", hex: "#FFDB58" },
+    { name: "Teal", hex: "#008080" },
+    { name: "Rose", hex: "#FF007F" },
+    { name: "Coffee Brown", hex: "#6F4E37" }
+  ];
+
+  return (
+    <div className="absolute bottom-16 left-0 right-0 mx-auto p-3 bg-white bg-opacity-90 rounded-lg shadow-lg" style={{ maxWidth: "90%", width: "fit-content" }}>
+      <h3 className="text-sm font-medium mb-2 text-gray-700">Fabric Color Options</h3>
+      <div className="flex flex-wrap gap-2 justify-center">
+        {colorOptions.map((color) => (
+          <button
+            key={color.hex}
+            title={color.name}
+            onClick={() => onSelectColor(color.hex)}
+            className={`w-8 h-8 rounded-full border ${selectedColor === color.hex ? 'border-2 border-black' : 'border-gray-300'}`}
+            style={{ backgroundColor: color.hex }}
+            aria-label={`Select ${color.name} color`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // 3D model viewer component
 interface ModelViewerProps {
   modelPath: string;
@@ -266,16 +355,18 @@ interface ModelViewerProps {
 }
 
 const ThreeJSModelViewer: React.FC<ModelViewerProps> = ({ modelPath, className = "" }) => {
-  const [hasError, setHasError] = useState(false);
-  const [contextLost, setContextLost] = useState(false);
-  const canvasRef = useRef(null);
+  const [hasError, setHasError] = useState<boolean>(false);
+  const [contextLost, setContextLost] = useState<boolean>(false);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [showColorPalette, setShowColorPalette] = useState<boolean>(false);
   
   // Get device capabilities and quality settings
   const { tier, qualitySettings, isLoading: detectingDevice } = useDeviceCapabilities();
 
   // Handle context loss events
   useEffect(() => {
-    const handleContextLoss = (e) => {
+    const handleContextLoss = (e: Event) => {
       e.preventDefault();
       console.warn('WebGL context lost');
       setContextLost(true);
@@ -293,6 +384,16 @@ const ThreeJSModelViewer: React.FC<ModelViewerProps> = ({ modelPath, className =
   const handleError = () => {
     console.error("Error loading model:", modelPath);
     setHasError(true);
+  };
+
+  // Toggle color palette visibility
+  const toggleColorPalette = () => {
+    setShowColorPalette(prev => !prev);
+  };
+
+  // Handle color selection
+  const handleSelectColor = (color: string) => {
+    setSelectedColor(color);
   };
 
   if (contextLost) {
@@ -321,7 +422,7 @@ const ThreeJSModelViewer: React.FC<ModelViewerProps> = ({ modelPath, className =
         <ErrorMessage />
       ) : (
         <>
-          <div type="text/partytown" data-worker-component="true" style={{ width: '100%', height: '100%' }}>
+          <div data-worker-component="true" style={{ width: '100%', height: '100%' }}>
             <Canvas
               shadows={qualitySettings.shadows}
               dpr={[1, qualitySettings.pixelRatio]}
@@ -375,10 +476,26 @@ const ThreeJSModelViewer: React.FC<ModelViewerProps> = ({ modelPath, className =
               <Ground qualitySettings={qualitySettings} />
               
               <Suspense fallback={<LoadingFallback />}>
-                <Model modelPath={modelPath} qualitySettings={qualitySettings} />
+                <Model modelPath={modelPath} qualitySettings={qualitySettings} selectedColor={selectedColor} />
               </Suspense>
             </Canvas>
           </div>
+          
+          {/* Color customization button */}
+          <button 
+            className="absolute top-12 right-2 bg-white rounded-md p-2 shadow-md hover:bg-gray-100 transition-colors"
+            onClick={toggleColorPalette}
+            aria-label="Customize fabric color"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v11a3 3 0 106 0V4a2 2 0 00-2-2H4zm1 14a1 1 0 100-2 1 1 0 000 2zm5-1.757l4.9-4.9a2 2 0 000-2.828L13.485 5.1a2 2 0 00-2.828 0L10 5.757v8.486zM16 18H9.071l6-6H16a2 2 0 012 2v2a2 2 0 01-2 2z" clipRule="evenodd" />
+            </svg>
+          </button>
+          
+          {/* Show color palette when button is clicked */}
+          {showColorPalette && (
+            <ColorPalette onSelectColor={handleSelectColor} selectedColor={selectedColor} />
+          )}
           
           <Instructions />
           <Loader />
