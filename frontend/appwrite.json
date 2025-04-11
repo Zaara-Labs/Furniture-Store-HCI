@@ -1,0 +1,258 @@
+{
+    "projectId": "67f550cb0011238ac191",
+    "projectName": "Fabrique",
+    "settings": {
+        "services": {
+            "account": true,
+            "avatars": true,
+            "databases": true,
+            "locale": true,
+            "health": true,
+            "storage": true,
+            "teams": true,
+            "users": true,
+            "functions": true,
+            "graphql": true,
+            "messaging": true
+        },
+        "auth": {
+            "methods": {
+                "jwt": true,
+                "phone": true,
+                "invites": true,
+                "anonymous": true,
+                "email-otp": true,
+                "magic-url": true,
+                "email-password": true
+            },
+            "security": {
+                "duration": 31536000,
+                "limit": 0,
+                "sessionsLimit": 10,
+                "passwordHistory": 0,
+                "passwordDictionary": false,
+                "personalDataCheck": false,
+                "sessionAlerts": false,
+                "mockNumbers": []
+            }
+        }
+    },
+    "databases": [
+        {
+            "$id": "67f5616b000b636218db",
+            "name": "fabrique-db",
+            "enabled": true
+        }
+    ],
+    "collections": [
+        {
+            "$id": "67f69b00000c211cf835",
+            "$permissions": [],
+            "databaseId": "67f5616b000b636218db",
+            "name": "product",
+            "enabled": true,
+            "documentSecurity": false,
+            "attributes": [
+                {
+                    "key": "name",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 200,
+                    "default": null
+                },
+                {
+                    "key": "description",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 1000,
+                    "default": null
+                },
+                {
+                    "key": "material",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 80,
+                    "default": null
+                },
+                {
+                    "key": "dim_height",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "dim_width",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "dim_depth",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "dim_weight",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "slug",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 300,
+                    "default": null
+                },
+                {
+                    "key": "price",
+                    "type": "double",
+                    "required": false,
+                    "array": true,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "main_image_url",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "format": "url",
+                    "default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "slug_unique",
+                    "type": "unique",
+                    "status": "available",
+                    "attributes": [
+                        "slug"
+                    ],
+                    "orders": [
+                        "ASC"
+                    ]
+                }
+            ]
+        },
+        {
+            "$id": "67f6abb3002b8c37ca9f",
+            "$permissions": [],
+            "databaseId": "67f5616b000b636218db",
+            "name": "product_category",
+            "enabled": true,
+            "documentSecurity": false,
+            "attributes": [
+                {
+                    "key": "name",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 80,
+                    "default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "name_unique",
+                    "type": "unique",
+                    "status": "available",
+                    "attributes": [
+                        "name"
+                    ],
+                    "orders": [
+                        "ASC"
+                    ]
+                }
+            ]
+        },
+        {
+            "$id": "67f7d9a80003dd74b3d3",
+            "$permissions": [],
+            "databaseId": "67f5616b000b636218db",
+            "name": "collection",
+            "enabled": true,
+            "documentSecurity": false,
+            "attributes": [
+                {
+                    "key": "name",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 80,
+                    "default": null
+                },
+                {
+                    "key": "slug",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 80,
+                    "default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "slug_unique",
+                    "type": "unique",
+                    "status": "available",
+                    "attributes": [
+                        "slug"
+                    ],
+                    "orders": [
+                        "ASC"
+                    ]
+                }
+            ]
+        }
+    ],
+    "buckets": [
+        {
+            "$id": "67f801cc00070efc4e4e",
+            "$permissions": [],
+            "fileSecurity": false,
+            "name": "product-images",
+            "enabled": true,
+            "maximumFileSize": 5000000000,
+            "allowedFileExtensions": [
+                "jpg",
+                "png",
+                "gif",
+                "webp"
+            ],
+            "compression": "gzip",
+            "encryption": true,
+            "antivirus": true
+        },
+        {
+            "$id": "67f80221000956fd5a30",
+            "$permissions": [],
+            "fileSecurity": false,
+            "name": "product-models",
+            "enabled": true,
+            "maximumFileSize": 5000000000,
+            "allowedFileExtensions": [],
+            "compression": "none",
+            "encryption": true,
+            "antivirus": true
+        }
+    ]
+}

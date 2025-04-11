@@ -1,15 +1,19 @@
 import { Client, Account, Storage, ID, Databases, AppwriteException } from 'appwrite';
+import { configService } from './configService';
 
 // Initialize Appwrite client
 const client = new Client();
 
-// Get Appwrite configuration from environment variables
-const APPWRITE_ENDPOINT = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1';
-const APPWRITE_PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '';
+// Get configuration from our config service instead of environment variables
+const APPWRITE_ENDPOINT = configService.getEndpoint();
+const APPWRITE_PROJECT_ID = configService.getProjectId();
+const DATABASE_ID = configService.getDatabaseId();
+const PRODUCT_COLLECTION_ID = configService.getCollectionId('product');
+const PRODUCT_CATEGORY_COLLECTION_ID = configService.getCollectionId('product_category');
 
-// Check if required environment variables are set
+// Check if required configuration is available
 if (!APPWRITE_PROJECT_ID) {
-  console.error('Missing Appwrite Project ID. Please set NEXT_PUBLIC_APPWRITE_PROJECT_ID in your .env.local file');
+  console.error('Missing Appwrite Project ID. Please check your appwrite.json file');
 }
 
 // Configure client
@@ -134,7 +138,7 @@ export const appwriteService = {
 
       // Get anonymous cart items
       const anonCart = await databases.listDocuments(
-        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '',
+        DATABASE_ID,
         'cart',
         [
           // Query where userOrSessionId equals anonymousId
@@ -152,7 +156,7 @@ export const appwriteService = {
       /*
       for (const item of anonCart.documents) {
         await databases.updateDocument(
-          process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '',
+          DATABASE_ID,
           'cart',
           item.$id,
           {
@@ -188,6 +192,49 @@ export const appwriteService = {
     } catch (error) {
       // Don't log errors here as this is a common check that will fail for unauthenticated users
       return false;
+    }
+  }
+};
+
+// Export a helper object for products that uses the configuration
+export const productService = {
+  getAllProducts: async (queries = []) => {
+    try {
+      return await databases.listDocuments(
+        DATABASE_ID,
+        PRODUCT_COLLECTION_ID,
+        queries
+      );
+    } catch (error) {
+      console.error("Product service :: getAllProducts :: error", error);
+      throw error;
+    }
+  },
+
+  getProductBySlug: async (slug) => {
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        PRODUCT_COLLECTION_ID,
+        [{ equal: ['slug', slug] }]
+      );
+      return response.documents[0] || null;
+    } catch (error) {
+      console.error("Product service :: getProductBySlug :: error", error);
+      throw error;
+    }
+  },
+
+  getProductCategories: async () => {
+    try {
+      return await databases.listDocuments(
+        DATABASE_ID,
+        PRODUCT_CATEGORY_COLLECTION_ID,
+        []
+      );
+    } catch (error) {
+      console.error("Product service :: getProductCategories :: error", error);
+      throw error;
     }
   }
 };
