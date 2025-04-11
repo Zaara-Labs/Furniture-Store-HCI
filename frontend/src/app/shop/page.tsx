@@ -4,17 +4,10 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Client, Databases, Query } from "appwrite";
+import { Query } from "appwrite";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-// Initialize Appwrite
-const client = new Client();
-client
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "")
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "");
-
-const databases = new Databases(client);
+import { productService } from "@/services/appwrite";
 
 export default function ShopPage() {
   const searchParams = useSearchParams();
@@ -32,11 +25,7 @@ export default function ShopPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await databases.listDocuments(
-          process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
-          "category",
-          []
-        );
+        const response = await productService.getProductCategories();
         setCategories(response.documents);
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -74,9 +63,7 @@ export default function ShopPage() {
           sortQueries.push(Query.orderDesc("price"));
         }
 
-        const response = await databases.listDocuments(
-          process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
-          "product",
+        const response = await productService.getAllProducts(
           queries.length > 0 ? [...queries, ...sortQueries] : sortQueries
         );
 
@@ -241,7 +228,7 @@ export default function ShopPage() {
                             {categories.find(c => c.$id === product.category)?.name || 'Unknown Category'}
                           </p>
                           <h3 className="font-medium text-gray-800 mb-2">{product.name}</h3>
-                          <p className="text-gray-700">${product.price.toFixed(2)}</p>
+                          <p className="text-gray-700">${product.price[0].toFixed(2)}</p>
                         </div>
                       </div>
                     </Link>
