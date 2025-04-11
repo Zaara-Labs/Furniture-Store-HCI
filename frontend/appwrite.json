@@ -47,11 +47,13 @@
     "collections": [
         {
             "$id": "67f69b00000c211cf835",
-            "$permissions": [],
+            "$permissions": [
+                "read(\"any\")"
+            ],
             "databaseId": "67f5616b000b636218db",
             "name": "product",
             "enabled": true,
-            "documentSecurity": false,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "name",
@@ -155,11 +157,13 @@
         },
         {
             "$id": "67f6abb3002b8c37ca9f",
-            "$permissions": [],
+            "$permissions": [
+                "read(\"any\")"
+            ],
             "databaseId": "67f5616b000b636218db",
             "name": "product_category",
             "enabled": true,
-            "documentSecurity": false,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "name",

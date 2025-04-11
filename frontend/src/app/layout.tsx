@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { Toaster } from "react-hot-toast";
+import { Partytown } from '@builder.io/partytown/react';
 
 // Load Inter font for regular text
 const inter = Inter({ 
@@ -12,7 +13,6 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-// Load Playfair Display for headings and serif text
 const playfair = Playfair_Display({
   subsets: ["latin"],
   display: "swap",
@@ -31,11 +31,33 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
-      <body className="antialiased">
+      <head>
+        <Partytown
+          debug={process.env.NODE_ENV === 'development'}
+          forward={['dataLayer.push']}
+          lib="/~partytown/"
+          config={{
+            resolveUrl: (url) => {
+              if (url.pathname.includes('/models/')) {
+                const proxyUrl = new URL(url);
+                return proxyUrl;
+              }
+              return url;
+            },
+            forward: [
+              ['mousemove', 'OrbitControls'], 
+              ['mousedown', 'OrbitControls'], 
+              ['mouseup', 'OrbitControls'],
+              ['wheel', 'OrbitControls']
+            ],
+          }}
+        />
+      </head>
+      <body>
         <AuthProvider>
           <CartProvider>
             {children}
-            <Toaster position="bottom-right" />
+            <Toaster position="top-right" />
           </CartProvider>
         </AuthProvider>
       </body>

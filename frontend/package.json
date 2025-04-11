@@ -9,12 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@builder.io/partytown": "^0.10.3",
+    "@react-three/drei": "^10.0.6",
+    "@react-three/fiber": "^9.1.2",
     "appwrite": "^17.0.1",
+    "detect-gpu": "^5.0.70",
     "next": "^15.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.55.0",
-    "react-hot-toast": "^2.5.2"
+    "react-hot-toast": "^2.5.2",
+    "simple-web-worker": "^1.2.0",
+    "three": "^0.175.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

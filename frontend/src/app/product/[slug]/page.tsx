@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,6 +11,23 @@ import { useCart } from "@/context/CartContext";
 import { toast } from "react-hot-toast";
 import { productService, databases } from "@/services/appwrite";
 import { configService } from "@/services/configService";
+import dynamic from 'next/dynamic';
+
+// Dynamically load the ThreeJSModelViewer component with no SSR
+const ThreeJSModelViewer = dynamic(
+  () => import('@/components/ThreeJSModelViewer'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full aspect-square flex items-center justify-center bg-gray-100 rounded-lg">
+        <div className="text-center">
+          <div className="animate-spin w-12 h-12 border-4 border-amber-800 border-t-transparent rounded-full mx-auto mb-3"></div>
+          <p className="text-gray-500">Loading 3D Model...</p>
+        </div>
+      </div>
+    )
+  }
+);
 
 export default function ProductPage() {
   const params = useParams();
@@ -27,6 +44,25 @@ export default function ProductPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [addingToCart, setAddingToCart] = useState(false);
+
+  // Sample model paths     NOTE: Only for development purposes
+  const modelPaths = {
+    chair: '/models/chair.glb',
+    table: '/models/table.glb',
+    sofa: '/models/sofa.glb',
+    default: '/models/furniture.glb'
+  };
+
+  const getModelPath = (product) => {
+    if (!product) return modelPaths.default;
+    
+    const productNameLower = product.name.toLowerCase();
+    if (productNameLower.includes('chair')) return modelPaths.chair;
+    if (productNameLower.includes('table')) return modelPaths.table;
+    if (productNameLower.includes('sofa')) return modelPaths.sofa;
+    
+    return modelPaths.default;
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -243,16 +279,7 @@ export default function ProductPage() {
             {/* Product Images */}
             <div className="lg:w-1/2">
               <div className="aspect-square relative mb-4 bg-gray-50 rounded-lg overflow-hidden">
-                {is3DModelVisible && product.model_3d_url ? (
-                  <div className="w-full h-full">
-                    <iframe
-                      src={product.model_3d_url}
-                      className="w-full h-full"
-                      title={`3D Model of ${product.name}`}
-                      allowFullScreen
-                    ></iframe>
-                  </div>
-                ) : allImages.length > 0 ? (
+                {allImages.length > 0 ? (
                   <Image
                     src={allImages[selectedImage]}
                     alt={product.name}
@@ -290,19 +317,6 @@ export default function ProductPage() {
                     />
                   </button>
                 ))}
-                {product.model_3d_url && (
-                  <button
-                    onClick={() => setIs3DModelVisible(true)}
-                    className={`flex items-center justify-center w-20 h-20 flex-shrink-0 rounded-md 
-                      ${
-                        is3DModelVisible
-                          ? "ring-2 ring-amber-800 bg-amber-50"
-                          : "ring-1 ring-gray-200 bg-gray-50"
-                      }`}
-                  >
-                    <span className="text-2xl">3D</span>
-                  </button>
-                )}
               </div>
             </div>
 
@@ -338,7 +352,7 @@ export default function ProductPage() {
                   </li>
                   <li className="flex justify-between">
                     <span className="text-gray-500">Weight</span>
-                    <span>{product.dim_weight} kg</span>
+                    <span>{product.weight} kg</span>
                   </li>
                   <li className="flex justify-between">
                     <span className="text-gray-500">In Stock</span>
@@ -453,6 +467,23 @@ export default function ProductPage() {
             </div>
           </div>
 
+          {/* 3D Model Viewer Section */}
+          <div className="mt-16 bg-white p-6 rounded-lg shadow-sm">
+            <h2 className="text-2xl font-serif font-medium mb-6">
+              View Product in 3D
+            </h2>
+            <p className="text-gray-700 mb-6">
+              Rotate, zoom, and explore this product in 3D to get a better understanding
+              of its design and proportions. Use your mouse to rotate the model and the scroll wheel to zoom.
+            </p>
+            <div className="aspect-[16/9] w-full bg-gray-50 rounded-lg overflow-hidden">
+              <ThreeJSModelViewer modelPath={getModelPath(product)} />
+            </div>
+            <p className="mt-4 text-sm text-gray-500">
+              Note: The 3D model is a representation and may slightly differ from the actual product.
+            </p>
+          </div>
+
           {/* Related Products */}
           {relatedProducts.length > 0 && (
             <section className="mt-16">
@@ -486,7 +517,9 @@ export default function ProductPage() {
                           {relatedProduct.name}
                         </h3>
                         <p className="text-gray-700">
-                          ${relatedProduct.price.toFixed(2)}
+                          ${Array.isArray(relatedProduct.price) ? 
+                              relatedProduct.price[0].toFixed(2) : 
+                              relatedProduct.price.toFixed(2)}
                         </p>
                       </div>
                     </div>
