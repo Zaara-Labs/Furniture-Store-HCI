@@ -1,4 +1,4 @@
-import { Client, Account, Storage, ID, Databases, AppwriteException } from 'appwrite';
+import { Client, Account, Storage, ID, Databases, AppwriteException, Query } from 'appwrite';
 import { configService } from './configService';
 
 // Initialize Appwrite client
@@ -216,7 +216,7 @@ export const productService = {
       const response = await databases.listDocuments(
         DATABASE_ID,
         PRODUCT_COLLECTION_ID,
-        [{ equal: ['slug', slug] }]
+        [Query.equal('slug', slug)]
       );
       return response.documents[0] || null;
     } catch (error) {

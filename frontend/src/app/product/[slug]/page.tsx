@@ -4,19 +4,13 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Client, Databases, Query } from "appwrite";
+import { Query } from "appwrite";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
 import { toast } from "react-hot-toast";
-
-// Initialize Appwrite
-const client = new Client();
-client
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "")
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "");
-
-const databases = new Databases(client);
+import { productService, databases } from "@/services/appwrite";
+import { configService } from "@/services/configService";
 
 export default function ProductPage() {
   const params = useParams();
@@ -43,45 +37,48 @@ export default function ProductPage() {
 
       try {
         // Get product by slug
-        const response = await databases.listDocuments(
-          process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
-          "product",
-          [Query.equal("slug", slug)]
-        );
+        const productData = await productService.getProductBySlug(slug);
 
-        if (response.documents.length === 0) {
+        if (!productData) {
           setError("Product not found");
           return;
         }
 
-        const productData = response.documents[0];
         setProduct(productData);
 
         // Reset quantity when product changes
         setQuantity(1);
-
+        
         // Get category information
         if (productData.category) {
-          const categoryResponse = await databases.getDocument(
-            process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
-            "category",
-            productData.category
-          );
-          setCategory(categoryResponse);
+          try {
+            const categoryResponse = await databases.getDocument(
+              configService.getDatabaseId(),
+              configService.getCollectionId('product_category'),
+              productData.category
+            );
+            setCategory(categoryResponse);
+          } catch (categoryError) {
+            console.error("Error fetching category:", categoryError);
+          }
         }
 
         // Get related products from same category
         if (productData.category) {
-          const relatedResponse = await databases.listDocuments(
-            process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
-            "product",
-            [
-              Query.equal("category", productData.category),
-              Query.notEqual("$id", productData.$id),
-              Query.limit(4),
-            ]
-          );
-          setRelatedProducts(relatedResponse.documents);
+          try {
+            const relatedResponse = await databases.listDocuments(
+              configService.getDatabaseId(),
+              configService.getCollectionId('product'),
+              [
+                Query.equal("category", productData.category),
+                Query.notEqual("$id", productData.$id),
+                Query.limit(4)
+              ]
+            );
+            setRelatedProducts(relatedResponse.documents);
+          } catch (relatedError) {
+            console.error("Error fetching related products:", relatedError);
+          }
         }
       } catch (err) {
         console.error("Error fetching product:", err);
@@ -140,7 +137,7 @@ export default function ProductPage() {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow pt-24 pb-16 px-4">
+        <main className="bg-[#f8f9fa] flex-grow pt-24 pb-16 px-4">
           <div className="container mx-auto">
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
@@ -174,7 +171,7 @@ export default function ProductPage() {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow pt-24 pb-16 px-4">
+        <main className="bg-[#f8f9fa] flex-grow pt-24 pb-16 px-4">
           <div className="container mx-auto text-center">
             <h1 className="text-3xl font-medium mb-4">
               {error || "Product not found"}
@@ -205,7 +202,7 @@ export default function ProductPage() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <main className="flex-grow pt-24 pb-16 px-4">
+      <main className="bg-[#f8f9fa] flex-grow pt-24 pb-16 px-4">
         <div className="container mx-auto">
           {/* Breadcrumbs */}
           <nav className="mb-8">
@@ -318,7 +315,7 @@ export default function ProductPage() {
                 {product.name}
               </h1>
               <p className="text-2xl text-gray-900 mb-6">
-                ${product.price.toFixed(2)}
+                ${product.price[0].toFixed(2)}
               </p>
 
               <div className="prose prose-amber mb-8">
