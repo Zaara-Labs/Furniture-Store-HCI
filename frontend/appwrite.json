@@ -107,7 +107,7 @@
                     "default": null
                 },
                 {
-                    "key": "dim_weight",
+                    "key": "weight",
                     "type": "double",
                     "required": true,
                     "array": false,
