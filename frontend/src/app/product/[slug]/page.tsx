@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect} from "react";
+import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Query } from "appwrite";
@@ -31,7 +31,6 @@ const ThreeJSModelViewer = dynamic(
 
 export default function ProductPage() {
   const params = useParams();
-  const router = useRouter();
   const { slug } = params;
   const { addToCart } = useCart();
 
@@ -213,7 +212,7 @@ export default function ProductPage() {
               {error || "Product not found"}
             </h1>
             <p className="mb-8 text-gray-600">
-              We couldn't find the product you're looking for.
+              We couldn&apos;t find the product you&apos;re looking for.
             </p>
             <Link
               href="/shop"

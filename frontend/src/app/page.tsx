@@ -1,13 +1,10 @@
 import React from "react";
-import Image from "next/image";
-import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import FeaturedCategories from "@/components/FeaturedCategories";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import TestimonialSection from "@/components/TestimonialSection";
 import Footer from "@/components/Footer";
-import { use } from "react";
 
 export default function Home() {
   return (

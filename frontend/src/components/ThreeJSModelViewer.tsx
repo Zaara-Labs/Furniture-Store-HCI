@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, useGLTF, Environment, Loader, useTexture } from '@react-three/drei';
+import { Canvas, useThree } from '@react-three/fiber';
+import { OrbitControls, PerspectiveCamera, useGLTF, Environment, Loader } from '@react-three/drei';
 import { Suspense } from 'react';
 import * as THREE from 'three';
 import { getGPUTier } from 'detect-gpu';
@@ -75,14 +75,16 @@ function useDeviceCapabilities() {
           deviceTier = 'high';
         }
 
+        console.log(navigator);
+        console.log(typeof navigator);
         // Checking memory constraints
-        const memory = (navigator as any).deviceMemory;
+        const memory = (navigator as Navigator)?.deviceMemory;
         if (memory && memory <= 4) {
           deviceTier = 'low';
         }
 
         // Checking for battery saving mode
-        const connection = (navigator as any).connection;
+        const connection = (navigator as Navigator)?.connection;
         if (connection && (connection.saveData || connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g')) {
           deviceTier = 'low';
         }
@@ -112,9 +114,10 @@ interface ModelProps {
   modelPath: string;
   qualitySettings: QualitySettings;
   selectedTexture: string | null;
+  errorState: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-function Model({ modelPath, qualitySettings, selectedTexture }: ModelProps) {
+function Model({ modelPath, qualitySettings, selectedTexture, errorState }: ModelProps) {
   const gltf = useGLTF(modelPath);
   const { scene } = gltf;
   const modelRef = useRef<THREE.Group>(null);
@@ -135,28 +138,33 @@ function Model({ modelPath, qualitySettings, selectedTexture }: ModelProps) {
     
     const loadedTextures: Record<string, THREE.Texture | null> = {};
     
-    // Pre-load all textures
-    Object.entries(texturePaths).forEach(([key, path]) => {
-      textureLoader.load(
-        path, 
-        (texture) => {
-          // Successfully loaded texture
-          texture.wrapS = THREE.RepeatWrapping;
-          texture.wrapT = THREE.RepeatWrapping;
-          texture.repeat.set(2, 2); // Adjust texture tiling
-          texture.anisotropy = qualitySettings.antialias ? 4 : 1;
-          
-          // Update the texture map state
-          loadedTextures[key] = texture;
-          setTextureMap(prev => ({...prev, [key]: texture}));
-        },
-        undefined,
-        (err) => {
-          console.error(`Failed to load texture: ${path}`, err);
-          loadedTextures[key] = null;
-        }
-      );
-    });
+    try{
+      // Pre-load all textures
+      Object.entries(texturePaths).forEach(([key, path]) => {
+        textureLoader.load(
+          path, 
+          (texture) => {
+            // Successfully loaded texture
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(2, 2); // Adjust texture tiling
+            texture.anisotropy = qualitySettings.antialias ? 4 : 1;
+            
+            // Update the texture map state
+            loadedTextures[key] = texture;
+            setTextureMap(prev => ({...prev, [key]: texture}));
+          },
+          undefined,
+          (err) => {
+            console.error(`Failed to load texture: ${path}`, err);
+            loadedTextures[key] = null;
+          }
+        );
+      });
+    } catch (error) {
+      console.error("Error loading textures:", error);
+      errorState(true);
+    }
     
     // Clean up textures on unmount
     return () => {
@@ -164,7 +172,7 @@ function Model({ modelPath, qualitySettings, selectedTexture }: ModelProps) {
         if (texture) texture.dispose();
       });
     };
-  }, [qualitySettings.antialias]);
+  }, [qualitySettings.antialias, errorState]);
 
   // Apply quality settings to the model and identify fabric materials
   useEffect(() => {
@@ -172,7 +180,7 @@ function Model({ modelPath, qualitySettings, selectedTexture }: ModelProps) {
       // Reset fabric materials array
       fabricMaterials.current = [];
       
-      modelRef.current.traverse((node: any) => {
+      modelRef.current.traverse((node: THREE.Object3D) => {
         if (node instanceof THREE.Mesh) {
           // Applying shadow settings
           node.castShadow = qualitySettings.shadows;
@@ -226,9 +234,10 @@ function Model({ modelPath, qualitySettings, selectedTexture }: ModelProps) {
       if (newTexture) {
         console.log(`Applying texture: ${selectedTexture} to ${fabricMaterials.current.length} materials`);
         
-        fabricMaterials.current.forEach((material: any) => {
+        fabricMaterials.current.forEach((material: THREE.Material) => {
           if (!material) return;
           
+          if (material instanceof THREE.MeshStandardMaterial) {
           // Store original material state if not already stored
           if (!material.userData) material.userData = {};
           if (!material.userData.hasOriginal) {
@@ -266,6 +275,7 @@ function Model({ modelPath, qualitySettings, selectedTexture }: ModelProps) {
             material.map = newTexture;
             material.needsUpdate = true;
           }
+        }
         });
       } else {
         console.warn(`Texture for ${selectedTexture} not loaded yet or failed to load`);
@@ -472,12 +482,7 @@ const ThreeJSModelViewer: React.FC<ModelViewerProps> = ({ modelPath, className =
         canvas.removeEventListener('webglcontextlost', handleContextLoss);
       };
     }
-  }, [canvasRef.current]);
-
-  const handleError = () => {
-    console.error("Error loading model:", modelPath);
-    setHasError(true);
-  };
+  }, []);
 
   // Toggle texture palette visibility
   const toggleTexturePalette = () => {
@@ -504,6 +509,8 @@ const ThreeJSModelViewer: React.FC<ModelViewerProps> = ({ modelPath, className =
       </div>
     );
   }
+
+
 
   return (
     <div 
@@ -570,7 +577,7 @@ const ThreeJSModelViewer: React.FC<ModelViewerProps> = ({ modelPath, className =
               <Ground qualitySettings={qualitySettings} />
               
               <Suspense fallback={<LoadingFallback />}>
-                <Model modelPath={modelPath} qualitySettings={qualitySettings} selectedTexture={selectedTexture} />
+                <Model modelPath={modelPath} qualitySettings={qualitySettings} selectedTexture={selectedTexture} errorState={setHasError} />
               </Suspense>
             </Canvas>
           </div>

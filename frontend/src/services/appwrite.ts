@@ -79,10 +79,6 @@ export const appwriteService = {
       const session = await account.createEmailPasswordSession(email, password);
 
       if (anonId) {
-        // Here you would implement merging anonymous cart with user cart
-        // This will depend on your cart implementation
-        await appwriteService.mergeAnonymousDataWithUser(anonId);
-
         // Clear the anonymous session since we've merged it
         localStorage.removeItem(ANONYMOUS_SESSION_KEY);
       }
@@ -131,46 +127,40 @@ export const appwriteService = {
   },
 
   // Merge anonymous data with logged-in user data
-  mergeAnonymousDataWithUser: async (anonymousId: string) => {
-    try {
-      // Implementation depends on how you store cart/favorites/etc.
-      // For example, if you store cart in a collection:
+  // mergeAnonymousDataWithUser: async (anonymousId: string) => {
+  //   try {
 
-      // Get anonymous cart items
-      const anonCart = await databases.listDocuments(
-        DATABASE_ID,
-        'cart',
-        [
-          // Query where userOrSessionId equals anonymousId
-          // Replace with your actual field names
-          // Query.equal('userOrSessionId', anonymousId)
-        ]
-      );
+  //     // Get anonymous cart items
+  //     const anonCart = await databases.listDocuments(
+  //       DATABASE_ID,
+  //       'cart',
+  //       [
+  //         // Query where userOrSessionId equals anonymousId
+  //         // Replace with your actual field names
+  //         // Query.equal('userOrSessionId', anonymousId)
+  //       ]
+  //     );
 
-      // Get user ID after login
-      const currentUser = await appwriteService.getCurrentUser();
-      if (!currentUser) return;
+  //     // Get user ID after login
+  //     const currentUser = await appwriteService.getCurrentUser();
+  //     if (!currentUser) return;
 
-      // Update each cart item to belong to the logged in user
-      // This is just an example - adjust to your actual data model
-      /*
-      for (const item of anonCart.documents) {
-        await databases.updateDocument(
-          DATABASE_ID,
-          'cart',
-          item.$id,
-          {
-            userOrSessionId: currentUser.$id
-          }
-        );
-      }
-      */
+  //     for (const item of anonCart.documents) {
+  //       await databases.updateDocument(
+  //         DATABASE_ID,
+  //         'cart',
+  //         item.$id,
+  //         {
+  //           userOrSessionId: currentUser.$id
+  //         }
+  //       );
+  //     }
 
-      console.log('Anonymous session merged with user account');
-    } catch (error) {
-      console.error("Appwrite service :: mergeAnonymousDataWithUser :: error", error);
-    }
-  },
+  //     console.log('Anonymous session merged with user account');
+  //   } catch (error) {
+  //     console.error("Appwrite service :: mergeAnonymousDataWithUser :: error", error);
+  //   }
+  // },
 
   // Logout
   logout: async () => {
@@ -190,7 +180,7 @@ export const appwriteService = {
       const user = await account.get();
       return Boolean(user);
     } catch (error) {
-      // Don't log errors here as this is a common check that will fail for unauthenticated users
+      console.debug("User is not authenticated", error);
       return false;
     }
   }

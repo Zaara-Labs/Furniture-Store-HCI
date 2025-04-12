@@ -89,7 +89,7 @@ export default function AccountPage() {
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
               <div className="p-6">
                 <h2 className="text-xl font-medium mb-4">Wishlist</h2>
-                <p className="text-gray-600 mb-4">Products you've saved for later</p>
+                <p className="text-gray-600 mb-4">Products you&apos;ve saved for later</p>
                 <button 
                   className="px-4 py-2 border border-amber-800 text-amber-800 rounded-md hover:bg-amber-50 transition-colors"
                   onClick={() => router.push('/wishlist')}

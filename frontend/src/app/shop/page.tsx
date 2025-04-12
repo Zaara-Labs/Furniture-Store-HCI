@@ -41,7 +41,7 @@ export default function ShopPage() {
       setError(null);
 
       try {
-        let queries = [];
+        const queries = [];
 
         if (categoryFilter) {
           queries.push(Query.equal("category", categoryFilter));
@@ -52,7 +52,7 @@ export default function ShopPage() {
         }
 
         // Add sorting
-        let sortQueries = [];
+        const sortQueries = [];
         if (sortOption === "name_asc") {
           sortQueries.push(Query.orderAsc("name"));
         } else if (sortOption === "name_desc") {

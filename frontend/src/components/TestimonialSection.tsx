@@ -1,4 +1,4 @@
-import Image from "next/image";
+// import Image from "next/image";
 
 export default function TestimonialSection() {
   const testimonials = [
@@ -56,7 +56,7 @@ export default function TestimonialSection() {
                 </svg>
               </div>
               
-              <p className="text-gray-700 italic mb-6">"{testimonial.quote}"</p>
+              <p className="text-gray-700 italic mb-6">&quot;{testimonial.quote}&quot;</p>
               
               <div className="flex items-center">
                 <div className="w-10 h-10 rounded-full bg-gray-300 mr-3">

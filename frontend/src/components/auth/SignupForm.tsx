@@ -30,8 +30,8 @@ export default function SignupForm() {
       setIsSubmitting(true);
       setError('');
       await signup(data.email, data.password, data.name);
-    } catch (error: any) {
-      setError(error.message || 'Failed to create account. Please try again.');
+    } catch (error: Error) {
+      setError(error?.message || 'Failed to create account. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
