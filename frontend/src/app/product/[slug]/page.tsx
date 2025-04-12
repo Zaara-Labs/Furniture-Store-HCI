@@ -12,11 +12,13 @@ import { toast } from "react-hot-toast";
 import { productService, databases } from "@/services/appwrite";
 import { configService } from "@/services/configService";
 import dynamic from 'next/dynamic';
+import { Product } from "@/types/collections/Product";
+import { ProductCategory } from "@/types/collections/ProductCategory";
 
 // Dynamically load the ThreeJSModelViewer component with no SSR
 const ThreeJSModelViewer = dynamic(
   () => import('@/components/ThreeJSModelViewer'),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="w-full h-full aspect-square flex items-center justify-center bg-gray-100 rounded-lg">
@@ -34,14 +36,14 @@ export default function ProductPage() {
   const { slug } = params;
   const { addToCart } = useCart();
 
-  const [product, setProduct] = useState(null);
-  const [category, setCategory] = useState(null);
-  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [category, setCategory] = useState<ProductCategory | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [is3DModelVisible, setIs3DModelVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [addingToCart, setAddingToCart] = useState(false);
 
   // Sample model paths     NOTE: Only for development purposes
@@ -52,7 +54,7 @@ export default function ProductPage() {
     default: '/models/furniture.glb'
   };
 
-  const getModelPath = (product) => {
+  const getModelPath = (product: Product) => {
     if (!product) return modelPaths.default;
     
     const productNameLower = product.name.toLowerCase();
@@ -72,7 +74,7 @@ export default function ProductPage() {
 
       try {
         // Get product by slug
-        const productData = await productService.getProductBySlug(slug);
+        const productData: Product | null = await productService.getProductBySlug((slug as string).toLowerCase());
 
         if (!productData) {
           setError("Product not found");
@@ -87,7 +89,7 @@ export default function ProductPage() {
         // Get category information
         if (productData.category) {
           try {
-            const categoryResponse = await databases.getDocument(
+            const categoryResponse: ProductCategory = await databases.getDocument(
               configService.getDatabaseId(),
               configService.getCollectionId('product_category'),
               productData.category
@@ -110,7 +112,7 @@ export default function ProductPage() {
                 Query.limit(4)
               ]
             );
-            setRelatedProducts(relatedResponse.documents);
+            setRelatedProducts(relatedResponse.documents as Product[]);
           } catch (relatedError) {
             console.error("Error fetching related products:", relatedError);
           }
@@ -126,7 +128,7 @@ export default function ProductPage() {
     fetchProduct();
   }, [slug]);
 
-  const handleQuantityChange = (e) => {
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     if (value > 0 && value <= (product?.stock_quantity || 1)) {
       setQuantity(value);
@@ -154,7 +156,7 @@ export default function ProductPage() {
       await addToCart({
         productId: product.$id,
         name: product.name,
-        price: product.price,
+        price: product.price[0],
         quantity: quantity,
         image: product.main_image_url || "",
       });
@@ -516,9 +518,7 @@ export default function ProductPage() {
                           {relatedProduct.name}
                         </h3>
                         <p className="text-gray-700">
-                          ${Array.isArray(relatedProduct.price) ? 
-                              relatedProduct.price[0].toFixed(2) : 
-                              relatedProduct.price.toFixed(2)}
+                          {relatedProduct.price[0].toFixed(2)}
                         </p>
                       </div>
                     </div>

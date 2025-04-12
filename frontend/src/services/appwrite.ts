@@ -1,5 +1,6 @@
 import { Client, Account, Storage, ID, Databases, AppwriteException, Query } from 'appwrite';
 import { configService } from './configService';
+import { Product } from '@/types/collections/Product';
 
 // Initialize Appwrite client
 const client = new Client();
@@ -188,7 +189,7 @@ export const appwriteService = {
 
 // Export a helper object for products that uses the configuration
 export const productService = {
-  getAllProducts: async (queries = []) => {
+  getAllProducts: async (queries: string[] = []) => {
     try {
       return await databases.listDocuments(
         DATABASE_ID,
@@ -201,14 +202,14 @@ export const productService = {
     }
   },
 
-  getProductBySlug: async (slug) => {
+  getProductBySlug: async (slug: string): Promise<Product | null> => {
     try {
       const response = await databases.listDocuments(
         DATABASE_ID,
         PRODUCT_COLLECTION_ID,
         [Query.equal('slug', slug)]
       );
-      return response.documents[0] || null;
+      return (response.documents[0] as Product) || null;
     } catch (error) {
       console.error("Product service :: getProductBySlug :: error", error);
       throw error;

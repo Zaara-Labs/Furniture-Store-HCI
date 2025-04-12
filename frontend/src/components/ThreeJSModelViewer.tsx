@@ -7,6 +7,14 @@ import { Suspense } from 'react';
 import * as THREE from 'three';
 import { getGPUTier } from 'detect-gpu';
 
+interface NavigatorExtended extends Navigator {
+  deviceMemory?: number;
+  connection?: {
+    saveData?: boolean;
+    effectiveType?: string;
+  };
+}
+
 // Define quality settings type
 interface QualitySettings {
   shadows: boolean;
@@ -78,13 +86,13 @@ function useDeviceCapabilities() {
         console.log(navigator);
         console.log(typeof navigator);
         // Checking memory constraints
-        const memory = (navigator as Navigator)?.deviceMemory;
+        const memory = (navigator as NavigatorExtended)?.deviceMemory;
         if (memory && memory <= 4) {
           deviceTier = 'low';
         }
 
         // Checking for battery saving mode
-        const connection = (navigator as Navigator)?.connection;
+        const connection = (navigator as NavigatorExtended)?.connection;
         if (connection && (connection.saveData || connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g')) {
           deviceTier = 'low';
         }

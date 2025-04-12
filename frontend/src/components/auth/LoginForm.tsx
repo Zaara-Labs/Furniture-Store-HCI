@@ -26,8 +26,12 @@ export default function LoginForm() {
       setIsSubmitting(true);
       setError('');
       await login(data.email, data.password);
-    } catch (error: Error) {
-      setError(error?.message || 'Failed to login. Please check your credentials.');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message || 'Failed to login. Please check your credentials.');
+      } else {
+        setError('Failed to login. Please check your credentials.');
+      }
     } finally {
       setIsSubmitting(false);
     }
