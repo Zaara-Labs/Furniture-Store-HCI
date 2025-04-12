@@ -36,7 +36,7 @@ const QUALITY_PRESETS: Record<string, QualitySettings> = {
     envMapIntensity: 0.5,
     lightIntensity: 0.8,
     maxTextureSize: 512,
-    useSimpleMaterials: true
+    useSimpleMaterials: false
   },
   // Mid-range devices
   medium: {
@@ -307,7 +307,7 @@ function Model({ modelPath, qualitySettings, selectedTexture, errorState }: Mode
   }, [selectedTexture, textureMap]);
 
   // Center and scale the model on load
-  React.useEffect(() => {
+  useEffect(() => {
     if (modelRef.current) {
       // Create bounding box
       const box = new THREE.Box3().setFromObject(modelRef.current);
@@ -324,9 +324,11 @@ function Model({ modelPath, qualitySettings, selectedTexture, errorState }: Mode
       // Scale model to reasonable size
       const maxDim = Math.max(size.x, size.y, size.z);
       const scale = 2 / maxDim;
+      
+      // Ensure the scale is applied consistently regardless of quality settings
       modelRef.current.scale.set(scale, scale, scale);
     }
-  }, [scene]);
+  }, [scene, qualitySettings]);
 
   return <primitive ref={modelRef} object={scene} />;
 }
