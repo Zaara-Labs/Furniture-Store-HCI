@@ -87,19 +87,19 @@ function useDeviceCapabilities() {
           deviceTier = 'high';
         }
 
-        // Checking memory constraints - with fallbacks
-        const memory = (navigator as NavigatorExtended)?.deviceMemory || 4; // Default to 4GB if not available
-        debug.deviceMemory = memory;
+        // // Checking memory constraints - with fallbacks
+        // const memory = (navigator as NavigatorExtended)?.deviceMemory || 4; // Default to 4GB if not available
+        // debug.deviceMemory = memory;
         
-        // Memory thresholds
-        if (memory <= 2) {
-          deviceTier = 'low';
-        } else if (memory >= 8) {
-          // Only upgrade to high if GPU tier also supports it
-          if (gpuTier.tier >= 1) {
-            deviceTier = 'high';
-          }
-        }
+        // // Memory thresholds
+        // if (memory <= 2) {
+        //   deviceTier = 'low';
+        // } else if (memory >= 8) {
+        //   // Only upgrade to high if GPU tier also supports it
+        //   if (gpuTier.tier >= 1) {
+        //     deviceTier = 'high';
+        //   }
+        // }
 
         // Checking for battery saving mode or network constraints
         const connection = (navigator as NavigatorExtended)?.connection;
@@ -110,7 +110,8 @@ function useDeviceCapabilities() {
           deviceTier = 'low';
         }
 
-        console.log(`Device capabilities detected: ${deviceTier} tier (GPU Tier: ${gpuTier.tier}, Mobile: ${gpuTier.isMobile}, Memory: ${memory}GB)`);
+        // console.log(`Device capabilities detected: ${deviceTier} tier (GPU Tier: ${gpuTier.tier}, Mobile: ${gpuTier.isMobile}, Memory: ${memory}GB)`);
+        console.log(`Device capabilities detected: ${deviceTier} tier (GPU Tier: ${gpuTier.tier}, Mobile: ${gpuTier.isMobile}`);
         setDebugInfo(debug);
         
         setTier(deviceTier);
