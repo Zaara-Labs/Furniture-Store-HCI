@@ -4,7 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { Toaster } from "react-hot-toast";
-import { Partytown } from '@builder.io/partytown/react';
+import { Partytown } from '@qwik.dev/partytown/react';
 
 // Load Inter font for regular text
 const inter = Inter({ 
@@ -34,22 +34,16 @@ export default function RootLayout({
       <head>
         <Partytown
           debug={process.env.NODE_ENV === 'development'}
-          forward={['dataLayer.push']}
+          forward={[
+            'dataLayer.push'
+          ]}
           lib="/~partytown/"
-          config={{
-            resolveUrl: (url) => {
-              if (url.pathname.includes('/models/')) {
-                const proxyUrl = new URL(url);
-                return proxyUrl;
-              }
-              return url;
-            },
-            forward: [
-              ['mousemove', 'OrbitControls'], 
-              ['mousedown', 'OrbitControls'], 
-              ['mouseup', 'OrbitControls'],
-              ['wheel', 'OrbitControls']
-            ],
+          resolveUrl={url => {
+            if (url.pathname.includes('/models/')) {
+              const proxyUrl = new URL(url);
+              return proxyUrl;
+            }
+            return url;
           }}
         />
       </head>
