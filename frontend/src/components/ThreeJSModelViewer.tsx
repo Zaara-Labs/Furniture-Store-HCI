@@ -65,14 +65,18 @@ function useDeviceCapabilities() {
   const [tier, setTier] = useState<string>('medium');
   const [qualitySettings, setQualitySettings] = useState<QualitySettings>(QUALITY_PRESETS.medium);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [debugInfo, setDebugInfo] = useState<Record<string, string | number | boolean | undefined>>({});
 
   useEffect(() => {
     async function detectCapabilities() {
       try {
         setIsLoading(true);
+        const debug: Record<string, string | number | boolean | undefined> = {};
 
         // Detecting GPU capabilities
         const gpuTier = await getGPUTier();
+        debug.gpuTier = gpuTier.tier;
+        debug.isMobile = gpuTier.isMobile;
 
         // Setting quality based on GPU tier and device type
         let deviceTier = 'medium';
@@ -83,22 +87,32 @@ function useDeviceCapabilities() {
           deviceTier = 'high';
         }
 
-        console.log(navigator);
-        console.log(typeof navigator);
-        // Checking memory constraints
-        const memory = (navigator as NavigatorExtended)?.deviceMemory;
-        if (memory && memory <= 4) {
+        // Checking memory constraints - with fallbacks
+        const memory = (navigator as NavigatorExtended)?.deviceMemory || 4; // Default to 4GB if not available
+        debug.deviceMemory = memory;
+        
+        // Memory thresholds
+        if (memory <= 2) {
           deviceTier = 'low';
+        } else if (memory >= 8) {
+          // Only upgrade to high if GPU tier also supports it
+          if (gpuTier.tier >= 1) {
+            deviceTier = 'high';
+          }
         }
 
-        // Checking for battery saving mode
+        // Checking for battery saving mode or network constraints
         const connection = (navigator as NavigatorExtended)?.connection;
+        debug.saveData = connection?.saveData;
+        debug.effectiveType = connection?.effectiveType;
+        
         if (connection && (connection.saveData || connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g')) {
           deviceTier = 'low';
         }
 
-        console.log(`Device capabilities detected: ${deviceTier} tier (GPU Tier: ${gpuTier.tier}, Mobile: ${gpuTier.isMobile})`);
-
+        console.log(`Device capabilities detected: ${deviceTier} tier (GPU Tier: ${gpuTier.tier}, Mobile: ${gpuTier.isMobile}, Memory: ${memory}GB)`);
+        setDebugInfo(debug);
+        
         setTier(deviceTier);
         setQualitySettings(QUALITY_PRESETS[deviceTier as keyof typeof QUALITY_PRESETS]);
       } catch (error) {
@@ -114,7 +128,7 @@ function useDeviceCapabilities() {
     detectCapabilities();
   }, []);
 
-  return { tier, qualitySettings, isLoading };
+  return { tier, qualitySettings, isLoading, debugInfo };
 }
 
 // Model component props
