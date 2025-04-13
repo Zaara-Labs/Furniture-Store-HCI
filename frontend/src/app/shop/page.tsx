@@ -160,7 +160,7 @@ function ShopContent() {
             <h2 className="font-medium text-lg mb-4">Categories</h2>
             <ul className="space-y-2">
               <li>
-                <button 
+                <button
                   className={`text-left w-full ${categoryFilter === "" ? "text-amber-800 font-medium" : "text-gray-700"}`}
                   onClick={() => applyFilter("category", "")}
                 >
@@ -169,7 +169,7 @@ function ShopContent() {
               </li>
               {categories.map(category => (
                 <li key={category.$id}>
-                  <button 
+                  <button
                     className={`text-left w-full ${categoryFilter === category.$id ? "text-amber-800 font-medium" : "text-gray-700"}`}
                     onClick={() => applyFilter("category", category.$id)}
                   >
@@ -184,7 +184,7 @@ function ShopContent() {
             <h2 className="font-medium text-lg mb-4">Materials</h2>
             <ul className="space-y-2">
               <li>
-                <button 
+                <button
                   className={`text-left w-full ${materialFilter === "" ? "text-amber-800 font-medium" : "text-gray-700"}`}
                   onClick={() => applyFilter("material", "")}
                 >
@@ -193,7 +193,7 @@ function ShopContent() {
               </li>
               {materials.map(material => (
                 <li key={material}>
-                  <button 
+                  <button
                     className={`text-left w-full ${materialFilter === material ? "text-amber-800 font-medium" : "text-gray-700"}`}
                     onClick={() => applyFilter("material", material)}
                   >
@@ -243,7 +243,7 @@ function ShopContent() {
           ) : products.length === 0 ? (
             <div className="text-center p-8">
               <p className="text-gray-600 mb-4">No products found matching your criteria.</p>
-              <button 
+              <button
                 onClick={() => {
                   router.push('/shop');
                 }}
@@ -259,8 +259,8 @@ function ShopContent() {
                   <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
                     <div className="aspect-square relative">
                       {product.main_image_url ? (
-                        <Image 
-                          src={product.main_image_url} 
+                        <Image
+                          src={product.main_image_url}
                           alt={product.name}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -294,13 +294,11 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
       <main className="bg-[#f8f9fa] flex-grow pt-24 pb-16 px-4">
         <Suspense fallback={<ShopLoading />}>
           <ShopContent />
         </Suspense>
       </main>
-      
       <Footer />
     </div>
   );

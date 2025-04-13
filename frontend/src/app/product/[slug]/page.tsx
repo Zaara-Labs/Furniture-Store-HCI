@@ -497,6 +497,22 @@ export default function ProductPage() {
                 </div>
               )}
 
+              {/* Try in Room Designer Button */}
+              {product.model_3d_url && (
+                <div className="mb-8">
+                  <Link 
+                    href={`/room-designer?productId=${product.$id}`}
+                    className="w-full py-3 px-6 bg-white text-amber-800 border border-amber-800 font-medium rounded-md hover:bg-amber-50 transition-colors flex items-center justify-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      <path fillRule="evenodd" d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                    Try in Room Designer
+                  </Link>
+                </div>
+              )}
+
               {/* Additional action buttons */}
               <div className="flex flex-wrap gap-4">
                 <button className="text-gray-700 flex items-center gap-2 hover:text-amber-800">
