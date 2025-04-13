@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Canvas } from '@react-three/fiber';
+import { Canvas, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { productService } from "@/services/appwrite";
 import { Product } from "@/types/collections/Product";
 import Link from 'next/link';
@@ -113,7 +114,7 @@ const DraggableModel = ({
               const mesh = node as THREE.Mesh;
               if (mesh.material instanceof THREE.MeshStandardMaterial) {
                 mesh.material = mesh.material.clone();
-                mesh.material.map = texture;
+                (mesh.material as THREE.MeshStandardMaterial).map = texture;
                 mesh.material.needsUpdate = true;
               }
             }
@@ -161,14 +162,14 @@ const DraggableModel = ({
     }
   }, [scene, textureUrl, dimensions, dimensionSku, scale]);
 
-  const onPointerDown = (e: any) => {
+  const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     onSelect();
     setIsDragging(true);
     dragStartPos.current = [...position] as [number, number, number];
   };
 
-  const onPointerMove = (e: any) => {
+  const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
     if (isDragging && modelRef.current) {
       e.stopPropagation();
       
@@ -180,7 +181,7 @@ const DraggableModel = ({
         e.ray.intersectPlane(groundPlane, intersectPoint);
       } else {
         const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(e.point, e.camera);
+        raycaster.setFromCamera(new THREE.Vector2(e.point.x, e.point.y), e.camera);
         raycaster.ray.intersectPlane(groundPlane, intersectPoint);
       }
       
@@ -310,9 +311,10 @@ const Room = ({ settings }: { settings: RoomSettings }) => {
       </mesh>
     </group>
   );
-};
+}
 
-export default function RoomDesignerPage() {
+// Main room designer component
+function RoomDesigner() {
   const searchParams = useSearchParams();
   const initialProductId = searchParams.get('productId');
   
@@ -331,8 +333,7 @@ export default function RoomDesignerPage() {
     floorColor: '#d2b48c',
   });
 
-  // Create a ref to access the OrbitControls
-  const orbitControlsRef = useRef<any>(null);
+  const orbitControlsRef = useRef<OrbitControlsImpl>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   
   // Camera position states
@@ -521,7 +522,7 @@ export default function RoomDesignerPage() {
               dampingFactor={0.1}
               minDistance={1}
               maxDistance={20}
-              camera={cameraRef.current}
+              camera={cameraRef.current || undefined}
             />
           </Canvas>
           
@@ -948,5 +949,25 @@ export default function RoomDesignerPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+// Page component with Suspense boundary
+export default function RoomDesignerPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col bg-white">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-800 mx-auto mb-4"></div>
+            <p className="text-gray-700">Loading Room Designer...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <RoomDesigner />
+    </Suspense>
   );
 }
