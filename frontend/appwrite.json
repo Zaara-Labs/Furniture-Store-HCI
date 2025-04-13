@@ -124,7 +124,48 @@
                     "default": null
                 },
                 {
-                    "key": "price",
+                    "key": "main_image_url",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "format": "url",
+                    "default": null
+                },
+                {
+                    "key": "model_3d_url",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "format": "url",
+                    "default": null
+                },
+                {
+                    "key": "variation_count",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "min": 1,
+                    "max": 9223372036854775807,
+                    "default": 1
+                },
+                {
+                    "key": "variation_images",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "format": "url",
+                    "default": null
+                },
+                {
+                    "key": "variation_names",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 150,
+                    "default": null
+                },
+                {
+                    "key": "variation_prices",
                     "type": "double",
                     "required": false,
                     "array": true,
@@ -133,11 +174,28 @@
                     "default": null
                 },
                 {
-                    "key": "main_image_url",
+                    "key": "variation_color_codes",
                     "type": "string",
-                    "required": true,
-                    "array": false,
+                    "required": false,
+                    "array": true,
+                    "size": 6,
+                    "default": null
+                },
+                {
+                    "key": "variation_texture_urls",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
                     "format": "url",
+                    "default": null
+                },
+                {
+                    "key": "variation_stock_quantity",
+                    "type": "integer",
+                    "required": false,
+                    "array": true,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807,
                     "default": null
                 }
             ],
@@ -231,8 +289,10 @@
     "buckets": [
         {
             "$id": "67f801cc00070efc4e4e",
-            "$permissions": [],
-            "fileSecurity": false,
+            "$permissions": [
+                "read(\"any\")"
+            ],
+            "fileSecurity": true,
             "name": "product-images",
             "enabled": true,
             "maximumFileSize": 5000000000,
@@ -248,12 +308,37 @@
         },
         {
             "$id": "67f80221000956fd5a30",
-            "$permissions": [],
+            "$permissions": [
+                "read(\"any\")"
+            ],
             "fileSecurity": false,
             "name": "product-models",
             "enabled": true,
             "maximumFileSize": 5000000000,
-            "allowedFileExtensions": [],
+            "allowedFileExtensions": [
+                "glb",
+                "gltf",
+                "obj"
+            ],
+            "compression": "none",
+            "encryption": true,
+            "antivirus": true
+        },
+        {
+            "$id": "67f9ceb1001539a01bd8",
+            "$permissions": [
+                "read(\"any\")"
+            ],
+            "fileSecurity": true,
+            "name": "product_model_textures",
+            "enabled": true,
+            "maximumFileSize": 5000000000,
+            "allowedFileExtensions": [
+                "jpg",
+                "png",
+                "gif",
+                "webp"
+            ],
             "compression": "none",
             "encryption": true,
             "antivirus": true

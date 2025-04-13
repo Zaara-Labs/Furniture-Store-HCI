@@ -148,6 +148,7 @@ function ShopContent() {
     router.push(`/shop?${params.toString()}`);
   };
 
+  console.log(products);
   return (
     <div className="container mx-auto">
       <h1 className="text-3xl font-serif font-medium mb-8">Shop Our Collection</h1>
@@ -276,7 +277,7 @@ function ShopContent() {
                         {categories.find(c => c.$id === product.category)?.name || 'Unknown Category'}
                       </p>
                       <h3 className="font-medium text-gray-800 mb-2">{product.name}</h3>
-                      <p className="text-gray-700">${product.price[0].toFixed(2)}</p>
+                      <p className="text-gray-700">${product.variation_prices ? product.variation_prices[0]?.toFixed(2) : 'N/A'}</p>
                     </div>
                   </div>
                 </Link>

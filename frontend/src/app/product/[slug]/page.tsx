@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,13 +11,20 @@ import { useCart } from "@/context/CartContext";
 import { toast } from "react-hot-toast";
 import { productService, databases } from "@/services/appwrite";
 import { configService } from "@/services/configService";
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 import { Product } from "@/types/collections/Product";
 import { ProductCategory } from "@/types/collections/ProductCategory";
 
+// Extend Window interface to include our custom property
+declare global {
+  interface Window {
+    productVariationTextures?: string[];
+  }
+}
+
 // Dynamically load the ThreeJSModelViewer component with no SSR
 const ThreeJSModelViewer = dynamic(
-  () => import('@/components/ThreeJSModelViewer'),
+  () => import("@/components/ThreeJSModelViewer"),
   {
     ssr: false,
     loading: () => (
@@ -27,7 +34,7 @@ const ThreeJSModelViewer = dynamic(
           <p className="text-gray-500">Loading 3D Model...</p>
         </div>
       </div>
-    )
+    ),
   }
 );
 
@@ -46,24 +53,8 @@ export default function ProductPage() {
   const [error, setError] = useState<string | null>(null);
   const [addingToCart, setAddingToCart] = useState(false);
 
-  // Sample model paths     NOTE: Only for development purposes
-  const modelPaths = {
-    chair: '/models/chair.glb',
-    table: '/models/table.glb',
-    sofa: '/models/sofa.glb',
-    default: '/models/furniture.glb'
-  };
-
-  const getModelPath = (product: Product) => {
-    if (!product) return modelPaths.default;
-    
-    const productNameLower = product.name.toLowerCase();
-    if (productNameLower.includes('chair')) return modelPaths.chair;
-    if (productNameLower.includes('table')) return modelPaths.table;
-    if (productNameLower.includes('sofa')) return modelPaths.sofa;
-    
-    return modelPaths.default;
-  };
+  // New state for product variations
+  const [selectedVariation, setSelectedVariation] = useState(0);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -74,7 +65,9 @@ export default function ProductPage() {
 
       try {
         // Get product by slug
-        const productData: Product | null = await productService.getProductBySlug((slug as string).toLowerCase());
+        const productData: Product | null = await productService.getProductBySlug(
+          (slug as string).toLowerCase()
+        );
 
         if (!productData) {
           setError("Product not found");
@@ -82,16 +75,16 @@ export default function ProductPage() {
         }
 
         setProduct(productData);
-
-        // Reset quantity when product changes
+        // Reset state when product changes
         setQuantity(1);
-        
+        setSelectedVariation(0);
+
         // Get category information
         if (productData.category) {
           try {
             const categoryResponse: ProductCategory = await databases.getDocument(
               configService.getDatabaseId(),
-              configService.getCollectionId('product_category'),
+              configService.getCollectionId("product_category"),
               productData.category
             );
             setCategory(categoryResponse);
@@ -105,11 +98,11 @@ export default function ProductPage() {
           try {
             const relatedResponse = await databases.listDocuments(
               configService.getDatabaseId(),
-              configService.getCollectionId('product'),
+              configService.getCollectionId("product"),
               [
                 Query.equal("category", productData.category),
                 Query.notEqual("$id", productData.$id),
-                Query.limit(4)
+                Query.limit(4),
               ]
             );
             setRelatedProducts(relatedResponse.documents as Product[]);
@@ -127,6 +120,36 @@ export default function ProductPage() {
 
     fetchProduct();
   }, [slug]);
+
+  useEffect(() => {
+    // Make texture URLs available for the ThreeJSModelViewer component
+    if (product?.variation_texture_urls) {
+      // Create a global property to pass data to the ThreeJSModelViewer
+      window.productVariationTextures = product.variation_texture_urls;
+      
+      return () => {
+        // Cleanup when component unmounts
+        delete window.productVariationTextures;
+      };
+    }
+  }, [product]);
+
+  // Update selected image when variation changes to show the corresponding variation image
+  useEffect(() => {
+    if (product?.variation_images && product.variation_images[selectedVariation]) {
+      // Find the index of the variation image in the allImages array
+      const allImages = [
+        product.main_image_url,
+        ...(product.additional_image_urls || []),
+        ...(product.variation_images || []),
+      ].filter(Boolean);
+      
+      const variationImageIndex = allImages.indexOf(product.variation_images[selectedVariation]);
+      if (variationImageIndex !== -1) {
+        setSelectedImage(variationImageIndex);
+      }
+    }
+  }, [selectedVariation, product]);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
@@ -156,7 +179,7 @@ export default function ProductPage() {
       await addToCart({
         productId: product.$id,
         name: product.name,
-        price: product.price[0],
+        price: product.price[selectedVariation],
         quantity: quantity,
         image: product.main_image_url || "",
       });
@@ -229,10 +252,11 @@ export default function ProductPage() {
     );
   }
 
-  // Combine main image with additional images for the gallery
+  // Combine main image with additional images and variation images for the gallery
   const allImages = [
     product.main_image_url,
     ...(product.additional_image_urls || []),
+    ...(product.variation_images || []),
   ].filter(Boolean);
 
   return (
@@ -330,12 +354,49 @@ export default function ProductPage() {
                 {product.name}
               </h1>
               <p className="text-2xl text-gray-900 mb-6">
-                ${product.price[0].toFixed(2)}
+                ${product.variation_prices ? product.variation_prices[selectedVariation]?.toFixed(2) : "N/A"}
               </p>
 
               <div className="prose prose-amber mb-8">
                 <p className="text-gray-700">{product.description}</p>
               </div>
+
+              {/* Product Variations with Color */}
+              {product.variation_names && product.variation_names.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="font-medium mb-3">Available Options</h2>
+                  <div className="flex flex-wrap gap-3">
+                    {product.variation_names.map((name, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setSelectedVariation(index);
+                          // Show the corresponding variation image if available
+                          if (product.variation_images && product.variation_images[index]) {
+                            const variationImageIndex = allImages.indexOf(product.variation_images[index]);
+                            if (variationImageIndex !== -1) {
+                              setSelectedImage(variationImageIndex);
+                            }
+                          }
+                        }}
+                        className={`flex items-center py-2 px-4 rounded-md border ${
+                          selectedVariation === index
+                            ? "border-amber-800 bg-amber-50"
+                            : "border-gray-300 bg-white"
+                        }`}
+                      >
+                        {product.variation_color_codes && product.variation_color_codes[index] && (
+                          <span
+                            className="w-4 h-4 rounded-full mr-2 flex-shrink-0"
+                            style={{ backgroundColor: `#${product.variation_color_codes[index]}` }}
+                          ></span>
+                        )}
+                        <span>{name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="mb-8">
                 <h2 className="font-medium mb-2">Product Details</h2>
@@ -469,21 +530,30 @@ export default function ProductPage() {
           </div>
 
           {/* 3D Model Viewer Section */}
-          <div className="mt-16 bg-white p-6 rounded-lg shadow-sm">
-            <h2 className="text-2xl font-serif font-medium mb-6">
-              View Product in 3D
-            </h2>
-            <p className="text-gray-700 mb-6">
-              Rotate, zoom, and explore this product in 3D to get a better understanding
-              of its design and proportions. Use your mouse to rotate the model and the scroll wheel to zoom.
-            </p>
-            <div className="aspect-[16/9] w-full bg-gray-50 rounded-lg overflow-hidden">
-              <ThreeJSModelViewer modelPath={getModelPath(product)} />
+          {product.model_3d_url && (
+            <div className="mt-16 bg-white p-6 rounded-lg shadow-sm">
+              <h2 className="text-2xl font-serif font-medium mb-6">
+                View Product in 3D
+              </h2>
+              <p className="text-gray-700 mb-6">
+                Rotate, zoom, and explore this product in 3D to get a better
+                understanding of its design and proportions. Use your mouse to
+                rotate the model and the scroll wheel to zoom.
+              </p>
+              <div className="aspect-[16/9] w-full bg-gray-50 rounded-lg overflow-hidden">
+                <ThreeJSModelViewer 
+                  modelPath={product.model_3d_url}
+                  textureUrls={product.variation_texture_urls}
+                  textureNames={product.variation_names}
+                  colorCodes={product.variation_color_codes}
+                />
+              </div>
+              <p className="mt-4 text-sm text-gray-500">
+                Note: The 3D model is a representation and may slightly differ
+                from the actual product.
+              </p>
             </div>
-            <p className="mt-4 text-sm text-gray-500">
-              Note: The 3D model is a representation and may slightly differ from the actual product.
-            </p>
-          </div>
+          )}
 
           {/* Related Products */}
           {relatedProducts.length > 0 && (

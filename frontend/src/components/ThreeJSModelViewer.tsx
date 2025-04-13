@@ -87,20 +87,6 @@ function useDeviceCapabilities() {
           deviceTier = 'high';
         }
 
-        // // Checking memory constraints - with fallbacks
-        // const memory = (navigator as NavigatorExtended)?.deviceMemory || 4; // Default to 4GB if not available
-        // debug.deviceMemory = memory;
-        
-        // // Memory thresholds
-        // if (memory <= 2) {
-        //   deviceTier = 'low';
-        // } else if (memory >= 8) {
-        //   // Only upgrade to high if GPU tier also supports it
-        //   if (gpuTier.tier >= 1) {
-        //     deviceTier = 'high';
-        //   }
-        // }
-
         // Checking for battery saving mode or network constraints
         const connection = (navigator as NavigatorExtended)?.connection;
         debug.saveData = connection?.saveData;
@@ -110,7 +96,6 @@ function useDeviceCapabilities() {
           deviceTier = 'low';
         }
 
-        // console.log(`Device capabilities detected: ${deviceTier} tier (GPU Tier: ${gpuTier.tier}, Mobile: ${gpuTier.isMobile}, Memory: ${memory}GB)`);
         console.log(`Device capabilities detected: ${deviceTier} tier (GPU Tier: ${gpuTier.tier}, Mobile: ${gpuTier.isMobile}`);
         setDebugInfo(debug);
         
@@ -149,41 +134,39 @@ function Model({ modelPath, qualitySettings, selectedTexture, errorState }: Mode
   // Load fabric textures
   const [textureMap, setTextureMap] = useState<Record<string, THREE.Texture | null>>({});
   
-  // Load all sample textures when component mounts
+  // Load all textures when component mounts
   useEffect(() => {
     const textureLoader = new THREE.TextureLoader();
-    const texturePaths = {
-      "fine-gray": "/images/textures/chair_texture_1.jpeg",
-      "mustard": "/images/textures/chair_texture_2.jpeg",
-      "rose-pink": "/images/textures/chair_texture_3.jpeg",
-      "charcoal-gray": "/images/textures/chair_texture_4.jpeg",
-    };
-    
     const loadedTextures: Record<string, THREE.Texture | null> = {};
     
-    try{
-      // Pre-load all textures
-      Object.entries(texturePaths).forEach(([key, path]) => {
-        textureLoader.load(
-          path, 
-          (texture) => {
-            // Successfully loaded texture
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(2, 2); // Adjust texture tiling
-            texture.anisotropy = qualitySettings.antialias ? 4 : 1;
-            
-            // Update the texture map state
-            loadedTextures[key] = texture;
-            setTextureMap(prev => ({...prev, [key]: texture}));
-          },
-          undefined,
-          (err) => {
-            console.error(`Failed to load texture: ${path}`, err);
-            loadedTextures[key] = null;
+    try {
+      // Load product variation textures from Appwrite buckets
+      if (window.productVariationTextures && Array.isArray(window.productVariationTextures)) {
+        window.productVariationTextures.forEach((texturePath, index) => {
+          if (texturePath) {
+            const key = `variation-${index}`;
+            textureLoader.load(
+              texturePath,
+              (texture) => {
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(2, 2);
+                texture.anisotropy = qualitySettings.antialias ? 4 : 1;
+                
+                loadedTextures[key] = texture;
+                setTextureMap(prev => ({...prev, [key]: texture}));
+              },
+              undefined,
+              (err) => {
+                console.error(`Failed to load variation texture: ${texturePath}`, err);
+                loadedTextures[key] = null;
+              }
+            );
           }
-        );
-      });
+        });
+      } else {
+        console.warn("No product variation textures available");
+      }
     } catch (error) {
       console.error("Error loading textures:", error);
       errorState(true);
@@ -309,26 +292,38 @@ function Model({ modelPath, qualitySettings, selectedTexture, errorState }: Mode
   // Center and scale the model on load
   useEffect(() => {
     if (modelRef.current) {
-      // Create bounding box
+      // Find the bounding box of the model
       const box = new THREE.Box3().setFromObject(modelRef.current);
-      const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
-
-      // Center the model horizontally (x and z)
-      modelRef.current.position.x = -center.x;
-      modelRef.current.position.z = -center.z;
-
-      // Position model on the ground plane (y=-0.5) with small offset to prevent z-fighting
-      modelRef.current.position.y = -box.min.y - 0.5 + 0.01;
-
-      // Scale model to reasonable size
       const maxDim = Math.max(size.x, size.y, size.z);
-      const scale = 2 / maxDim;
       
-      // Ensure the scale is applied consistently regardless of quality settings
+      // Scale the model to fit in a standard size
+      const desiredMaxSize = 2; // Standard max dimension
+      const scale = desiredMaxSize / maxDim;
+      
       modelRef.current.scale.set(scale, scale, scale);
+      
+      // Center the model
+      const center = box.getCenter(new THREE.Vector3());
+      modelRef.current.position.x = -center.x * scale;
+      modelRef.current.position.y = -box.min.y - 0.5 + 0.01;;
+      modelRef.current.position.z = -center.z * scale;
+      
+      // // Make all materials in the scene double-sided for better visibility
+      // modelRef.current.traverse((object) => {
+      //   if ((object as THREE.Mesh).isMesh) {
+      //     const mesh = object as THREE.Mesh;
+      //     if (Array.isArray(mesh.material)) {
+      //       mesh.material.forEach((mat) => {
+      //         mat.side = THREE.DoubleSide;
+      //       });
+      //     } else if (mesh.material) {
+      //       mesh.material.side = THREE.DoubleSide;
+      //     }
+      //   }
+      // });
     }
-  }, [scene, qualitySettings]);
+  }, [scene]);
 
   return <primitive ref={modelRef} object={scene} />;
 }
@@ -443,16 +438,29 @@ function PerformanceMonitor() {
 interface ColorPaletteProps {
   onSelectTexture: (texture: string) => void;
   selectedTexture: string | null;
+  textureUrls?: string[];
+  textureNames?: string[];
+  colorCodes?: string[];
 }
 
 // Color palette component for fabric textures
-function ColorPalette({ onSelectTexture, selectedTexture }: ColorPaletteProps) {
-  const textureOptions = [
-        { name: "Charcoal Gray", key: "charcoal-gray", color: "#77808d" },
-        { name: "Mustard", key: "mustard", color: "#ffe2ab" },
-        { name: "Rose Pink", key: "rose-pink", color: "#fbb1d1" },
-        { name: "Fine Gray", key: "fine-gray", color: "#d1d1d1" },
-      ];
+function ColorPalette({ onSelectTexture, selectedTexture, textureNames, colorCodes }: ColorPaletteProps) {
+  // Use texture options from props
+  const textureOptions = colorCodes && textureNames && colorCodes.length > 0 ? 
+    colorCodes.map((color, index) => ({
+      name: textureNames[index] || `Option ${index + 1}`,
+      key: `variation-${index}`,
+      color: color
+    })) : [];
+
+  // If no texture options are available, show a message
+  if (textureOptions.length === 0) {
+    return (
+      <div className="absolute bottom-16 left-0 right-0 mx-auto p-3 bg-white bg-opacity-90 rounded-lg shadow-lg" style={{ maxWidth: "90%", width: "fit-content" }}>
+        <p className="text-sm text-gray-500">No color options available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="absolute bottom-16 left-0 right-0 mx-auto p-3 bg-white bg-opacity-90 rounded-lg shadow-lg" style={{ maxWidth: "90%", width: "fit-content" }}>
@@ -463,8 +471,8 @@ function ColorPalette({ onSelectTexture, selectedTexture }: ColorPaletteProps) {
             key={texture.key}
             title={texture.name}
             onClick={() => onSelectTexture(texture.key)}
-            className={`w-8 h-8 rounded-full border overflow-hidden ${selectedTexture === texture.key ? 'border-4 border-blue-500' : 'border-transparent'}`}
-            style={{ backgroundColor: texture.color}}
+            className={`w-8 h-8 rounded-full border overflow-hidden ${selectedTexture === texture.key ? 'ring-2 ring-amber-800' : 'ring-1 ring-gray-200'}`}
+            style={{ backgroundColor: `#${texture.color}`}}
             aria-label={`Select ${texture.name} texture`}
           >
             <span className="sr-only">{texture.name}</span>
@@ -479,14 +487,17 @@ function ColorPalette({ onSelectTexture, selectedTexture }: ColorPaletteProps) {
 interface ModelViewerProps {
   modelPath: string;
   className?: string;
+  textureUrls?: string[];
+  textureNames?: string[];
+  colorCodes?: string[];
 }
 
-const ThreeJSModelViewer: React.FC<ModelViewerProps> = ({ modelPath, className = "" }) => {
+const ThreeJSModelViewer: React.FC<ModelViewerProps> = ({ modelPath, className = "", textureNames, colorCodes }) => {
   const [hasError, setHasError] = useState<boolean>(false);
   const [contextLost, setContextLost] = useState<boolean>(false);
   const canvasRef = useRef<HTMLDivElement>(null);
-  // Set default texture to the first texture option
-  const [selectedTexture, setSelectedTexture] = useState<string | null>("fine-gray");
+  // Set default texture to the first variation
+  const [selectedTexture, setSelectedTexture] = useState<string | null>("variation-0");
   const [showTexturePalette, setShowTexturePalette] = useState<boolean>(false);
   
   // Get device capabilities and quality settings
@@ -621,7 +632,7 @@ const ThreeJSModelViewer: React.FC<ModelViewerProps> = ({ modelPath, className =
           
           {/* Show texture palette when button is clicked */}
           {showTexturePalette && (
-            <ColorPalette onSelectTexture={handleSelectTexture} selectedTexture={selectedTexture} />
+            <ColorPalette onSelectTexture={handleSelectTexture} selectedTexture={selectedTexture} textureNames={textureNames} colorCodes={colorCodes} />
           )}
           
           <Instructions />
