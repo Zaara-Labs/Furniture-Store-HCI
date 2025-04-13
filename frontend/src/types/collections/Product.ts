@@ -9,6 +9,7 @@ export interface Product extends Models.Document {
   dim_width: number;
   dim_height: number;
   dim_depth: number;
+  dim_sku: string;
   weight?: number;
   slug?: string;
   main_image_url?: string;

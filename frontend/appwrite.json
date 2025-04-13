@@ -197,6 +197,20 @@
                     "min": -9223372036854775808,
                     "max": 9223372036854775807,
                     "default": null
+                },
+                {
+                    "key": "dim_sku",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "elements": [
+                        "m",
+                        "cm",
+                        "in",
+                        "ft"
+                    ],
+                    "format": "enum",
+                    "default": "m"
                 }
             ],
             "indexes": [
