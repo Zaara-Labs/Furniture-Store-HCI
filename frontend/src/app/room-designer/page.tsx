@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, Suspense, useMemo } from 'react';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, useGLTF, Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -88,7 +87,7 @@ export default function DesignerPage() {
       name: product.name,
       model: product.model_3d_url,
       position: position as [number, number, number],
-      rotation: [0, Math.random() * Math.PI * 2, 0] as [number, number, number],
+      rotation: [0, 0, 0] as [number, number, number],
       scale: 1,
       textureUrl: product.variation_texture_urls?.[0],
       dimensions: {
@@ -114,6 +113,7 @@ export default function DesignerPage() {
   };
 
   const updateFurniturePosition = (index: number, newPosition: [number, number, number]) => {
+    console.log(`Updating position of item ${index} to ${newPosition}`);
     setFurniture(prev => prev.map((item, i) =>
       i === index ? { ...item, position: newPosition } : item
     ));
@@ -787,20 +787,19 @@ export default function DesignerPage() {
   );
 }
 
-function FurnitureItem({ 
-  item, 
-  index, 
-  isSelected, 
+function FurnitureItem({
+  item,
+  index,
+  isSelected,
   roomDimensions,
-  onSelect, 
+  onSelect,
   onPositionUpdate,
-  draggingEnabled 
+  draggingEnabled
 }) {
   const { scene } = useGLTF(item.model, true);
   const groupRef = useRef();
   const { camera } = useThree();
   const [isDragging, setIsDragging] = useState(false);
-  const [snapPosition, setSnapPosition] = useState([...item.position]);
   const [modelLoaded, setModelLoaded] = useState(false);
   
   // Load texture if available
@@ -821,83 +820,146 @@ function FurnitureItem({
     }
   }, [scene, item.textureUrl]);
   
-  // Handle dragging
-  useEffect(() => {
-    if (!groupRef.current || !draggingEnabled) return;
-    
-    const controls = new DragControls([groupRef.current], camera, document.querySelector('canvas'));
-    
-    controls.addEventListener('dragstart', () => {
-      setIsDragging(true);
-      onSelect(); // Select this item when drag starts
-    });
-    
-    controls.addEventListener('drag', (event) => {
-      // Keep Y position (height) constant during drag
-      const y = item.position[1];
-      event.object.position.y = y;
-      
-      // Constrain to room boundaries
-      const halfWidth = item.dimensions.width / 2;
-      const halfDepth = item.dimensions.depth / 2;
-      
-      event.object.position.x = Math.max(halfWidth, Math.min(roomDimensions.width - halfWidth, event.object.position.x));
-      event.object.position.z = Math.max(halfDepth, Math.min(roomDimensions.length - halfDepth, event.object.position.z));
-      
-      // Update position state while dragging
-      setSnapPosition([event.object.position.x, y, event.object.position.z]);
-    });
-    
-    controls.addEventListener('dragend', () => {
-      setIsDragging(false);
-      // Update the parent component with the new position
-      onPositionUpdate([groupRef.current.position.x, groupRef.current.position.y, groupRef.current.position.z]);
-    });
-    
-    return () => {
-      controls.dispose();
-    };
-  }, [camera, draggingEnabled, item.dimensions, roomDimensions]);
-  
-  // Update position from props
+  // Update position from props - ensures the 3D object matches the React state
   useEffect(() => {
     if (groupRef.current && !isDragging) {
       groupRef.current.position.set(...item.position);
     }
   }, [item.position, isDragging]);
   
+  // Handle dragging - now using consistent position updates
+  useEffect(() => {
+    if (!groupRef.current || !draggingEnabled) return;
+    
+    const controls = new DragControls([groupRef.current], camera, document.querySelector('canvas'));
+    
+    controls.addEventListener('dragstart', (event) => {
+      console.log('Drag started:', groupRef.current.position);
+      setIsDragging(true);
+      onSelect(); // Select this item when drag starts
+      console.log('Room dimension:', roomDimensions);
+    });
+    
+    controls.addEventListener('drag', (event) => {
+      // Keep Y position (height) constant during drag
+      const y = item.position[1];
+      event.object.position.y = y;
+      console.log('Dragging:', event.object.position);
+
+      // Calculate absolute position of the item from the relative coordinates
+      const abs_x = groupRef.current.position.x + event.object.position.x;
+      const abs_z = groupRef.current.position.z + event.object.position.z;
+      
+      // Constrain to room boundaries
+      const halfWidth = item.dimensions.width * getUnitConversionFactor(item.dimensionSku) / 2;
+      const halfDepth = item.dimensions.depth * getUnitConversionFactor(item.dimensionSku) / 2;
+
+      event.object.position.x = Math.max(halfWidth, Math.min(roomDimensions.width - halfWidth, abs_x)) - groupRef.current.position.x;
+      event.object.position.z = Math.max(halfDepth, Math.min(roomDimensions.length - halfDepth, abs_z)) - groupRef.current.position.z;
+    });
+    
+    controls.addEventListener('dragend', (event) => {
+      console.log('Drag ended:', event.object.position);
+      setIsDragging(false);
+      console.log('Initial absolute x', groupRef.current.position.x);
+      console.log('Initial absolute z', groupRef.current.position.z);
+      
+      // Use the same update function for both drag and position controls
+      onPositionUpdate([
+        groupRef.current.position.x + event.object.position.x,
+        groupRef.current.position.y,
+        groupRef.current.position.z + event.object.position.z
+      ]);
+      event.object.position.x = 0;
+      event.object.position.z = 0;
+      
+      console.log('Transformed relative x', event.object.position.x);
+      console.log('Final absolute x', groupRef.current.position.x);
+      console.log('Transformed relative z', event.object.position.z);
+      console.log('Final absolute z', groupRef.current.position.z);
+      console.log('Diff final & transformed x', groupRef.current.position.x - event.object.position.x);
+      console.log('Diff final & transformed z', groupRef.current.position.z - event.object.position.z);
+    });
+    
+    return () => {
+      controls.dispose();
+    };
+  }, [camera, draggingEnabled, item.dimensions, item.dimensionSku, item.position, onPositionUpdate, onSelect, roomDimensions.length, roomDimensions.width]);
+  
   // Apply correct dimensions based on the model and database dimensions
   useEffect(() => {
-    if (!scene || modelLoaded) return;
+    if (!scene) return;
     
-    // Use a small delay to ensure scene is fully loaded
-    const timer = setTimeout(() => {
-      if (item.dimensions) {
-        // Calculate real-world size in meters based on dimension SKU
-        const unitMultiplier = getUnitConversionFactor(item.dimensionSku);
+    // Ensure we scale the model properly on first load
+    if (!modelLoaded) {
+      console.log(`Scaling model for item ${index}:`, item.dimensions);
+      
+      // Calculate real-world size in meters based on dimension SKU
+      const unitMultiplier = getUnitConversionFactor(item.dimensionSku);
+      
+      const targetWidth = item.dimensions.width * unitMultiplier;
+      const targetHeight = item.dimensions.height * unitMultiplier;
+      const targetDepth = item.dimensions.depth * unitMultiplier;
+      
+      console.log(`Target dimensions (m): ${targetWidth} x ${targetHeight} x ${targetDepth}`);
+      
+      // Reset any previous scaling and update world matrix
+      scene.scale.set(1, 1, 1);
+      scene.updateMatrixWorld(true);
+      
+      // Get the actual size of the model
+      const box = new THREE.Box3().setFromObject(scene);
+      const modelSize = box.getSize(new THREE.Vector3());
+      
+      console.log(`Original model size: ${modelSize.x} x ${modelSize.y} x ${modelSize.z}`);
+      
+      if (modelSize.x > 0 && modelSize.y > 0 && modelSize.z > 0) {
+        // Calculate scale factors for each dimension
+        const scaleX = targetWidth / modelSize.x;
+        const scaleY = targetHeight / modelSize.y;
+        const scaleZ = targetDepth / modelSize.z;
         
-        const width = item.dimensions.width * unitMultiplier;
-        const height = item.dimensions.height * unitMultiplier;
-        const depth = item.dimensions.depth * unitMultiplier;
+        // Apply uniform scaling if the model has unusual proportions
+        let finalScaleX = scaleX;
+        let finalScaleY = scaleY;
+        let finalScaleZ = scaleZ;
         
-        // Get actual model dimensions
-        const box = new THREE.Box3().setFromObject(scene);
-        const modelSize = box.getSize(new THREE.Vector3());
+        // Check if dimensions are very different - might indicate model orientation issues
+        const maxScale = Math.max(scaleX, scaleY, scaleZ);
+        const minScale = Math.min(scaleX, scaleY, scaleZ);
         
-        // Calculate and apply scale factors for each dimension
-        if (modelSize.x > 0 && modelSize.y > 0 && modelSize.z > 0) {
-          const scaleX = width / modelSize.x;
-          const scaleY = height / modelSize.y;
-          const scaleZ = depth / modelSize.z;
-          
-          scene.scale.set(scaleX, scaleY, scaleZ);
-          setModelLoaded(true);
+        if (maxScale / minScale > 5) {
+          // If scales are very different, use the median scale as a uniform scale factor
+          const scales = [scaleX, scaleY, scaleZ].sort((a, b) => a - b);
+          const uniformScale = scales[1]; // Median value
+          finalScaleX = finalScaleY = finalScaleZ = uniformScale;
+          console.log(`Applied uniform scaling factor: ${uniformScale} due to disproportionate dimensions`);
+        } else {
+          console.log(`Applied scale factors: ${finalScaleX}, ${finalScaleY}, ${finalScaleZ}`);
         }
+        
+        // Apply scaling
+        scene.scale.set(finalScaleX, finalScaleY, finalScaleZ);
+        scene.updateMatrixWorld(true);
+        
+        // Verify final size
+        const newBox = new THREE.Box3().setFromObject(scene);
+        const newSize = newBox.getSize(new THREE.Vector3());
+        console.log(`New model size: ${newSize.x.toFixed(2)} x ${newSize.y.toFixed(2)} x ${newSize.z.toFixed(2)}`);
+        
+        setModelLoaded(true);
+      } else {
+        console.warn('Model has invalid dimensions. Retrying scaling...');
+        
+        // Try again after a delay to let the model fully load
+        const retryTimer = setTimeout(() => {
+          setModelLoaded(false); // Force another attempt
+        }, 500);
+        
+        return () => clearTimeout(retryTimer);
       }
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, [scene, item.dimensions, item.dimensionSku]);
+    }
+  }, [scene, item.dimensions, item.dimensionSku, modelLoaded, index]);
   
   // Optimized clone of the 3D model
   const clonedModel = useMemo(() => {
