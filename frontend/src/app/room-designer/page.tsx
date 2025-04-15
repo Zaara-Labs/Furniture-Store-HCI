@@ -1,439 +1,126 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, Suspense } from 'react';
-import { useSearchParams } from "next/navigation";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { Canvas, ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, useGLTF } from '@react-three/drei';
+import { useState, useRef, useEffect, Suspense, useMemo } from 'react';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrbitControls, PerspectiveCamera, Environment, useGLTF, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { productService } from "@/services/appwrite";
-import { Product } from "@/types/collections/Product";
-import Link from 'next/link';
+import { productService } from '@/services/appwrite';
+import { Product } from '@/types/collections/Product';
 import Image from 'next/image';
+import Link from 'next/link';
+import { DragControls } from 'three/examples/jsm/controls/DragControls';
 
-interface FurnitureItem {
+interface FurnitureItemProps {
   id: string;
+  name: string;
   model: string;
   position: [number, number, number];
   rotation: [number, number, number];
   scale: number;
   textureUrl?: string;
-  dimensions?: {
+  dimensions: {
     width: number;
     height: number;
     depth: number;
   };
-  dimensionSku?: string;
+  dimensionSku: string;
 }
 
-interface RoomSettings {
-  width: number;
-  length: number;
-  height: number;
-  wallColor: string;
-  floorColor: string;
-}
-
-// DraggableModel component allows furniture to be moved
-const DraggableModel = ({ 
-  modelPath, 
-  position, 
-  rotation, 
-  scale,
-  dimensions,
-  dimensionSku,
-  textureUrl, 
-  onPositionChange, 
-  onSelect, 
-  isSelected,
-  roomBounds,
-  otherFurniture
-}: {
-  modelPath: string;
-  position: [number, number, number];
-  rotation: [number, number, number];
-  scale: number; 
-  dimensions?: {width: number, height: number, depth: number};
-  dimensionSku?: string;
-  textureUrl?: string;
-  onPositionChange: (newPosition: [number, number, number]) => void;
-  onSelect: () => void;
-  isSelected: boolean;
-  roomBounds: {width: number, length: number};
-  otherFurniture: {
-    position: [number, number, number],
-    dimensions?: {width: number, height: number, depth: number},
-    dimensionSku?: string
-  }[];
-}) => {
-  const { scene } = useGLTF(modelPath);
-  const modelRef = useRef<THREE.Group>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartPos = useRef<[number, number, number]>([0, 0, 0]);
-  const [modelBounds, setModelBounds] = useState<{width: number, depth: number}>({ width: 1, depth: 1 });
-
-  // Convert dimensions from source units to meters (for Three.js)
-  const convertToMeters = (value: number, sku: string): number => {
-    switch (sku?.toLowerCase()) {
-      case 'cm': return value / 100;
-      case 'in': return value * 0.0254;
-      case 'ft': return value * 0.3048;
-      case 'm': 
-      default: return value;
-    }
-  };
-
-  useEffect(() => {
-    if (dimensions && dimensionSku) {
-      const widthInMeters = convertToMeters(dimensions.width, dimensionSku);
-      const depthInMeters = convertToMeters(dimensions.depth, dimensionSku);
-      
-      setModelBounds({
-        width: widthInMeters,
-        depth: depthInMeters
-      });
-    }
-  }, [dimensions, dimensionSku]);
-
-  useEffect(() => {
-    if (modelRef.current) {
-      // Clone the scene to avoid modifying the cached one
-      const clonedScene = scene.clone();
-      
-      // Apply texture if provided
-      if (textureUrl) {
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load(textureUrl, (texture) => {
-          texture.wrapS = THREE.RepeatWrapping;
-          texture.wrapT = THREE.RepeatWrapping;
-          
-          clonedScene.traverse((node) => {
-            if ((node as THREE.Mesh).isMesh) {
-              const mesh = node as THREE.Mesh;
-              if (mesh.material instanceof THREE.MeshStandardMaterial) {
-                mesh.material = mesh.material.clone();
-                (mesh.material as THREE.MeshStandardMaterial).map = texture;
-                mesh.material.needsUpdate = true;
-              }
-            }
-          });
-        });
-      }
-      
-      // Remove any existing children and add the cloned scene
-      while (modelRef.current.children.length > 0) {
-        modelRef.current.remove(modelRef.current.children[0]);
-      }
-      modelRef.current.add(clonedScene);
-      
-      // Calculate proper scaling based on dimensions if provided
-      if (dimensions && dimensionSku) {
-        // Convert dimensions to meters
-        const widthInMeters = convertToMeters(dimensions.width, dimensionSku);
-        const heightInMeters = convertToMeters(dimensions.height, dimensionSku);
-        const depthInMeters = convertToMeters(dimensions.depth, dimensionSku);
-        
-        // Get the original bounding box to find model proportions
-        const box = new THREE.Box3().setFromObject(clonedScene);
-        const modelSize = box.getSize(new THREE.Vector3());
-        
-        // Calculate scale factors for each dimension
-        const scaleX = widthInMeters / modelSize.x;
-        const scaleY = heightInMeters / modelSize.y;
-        const scaleZ = depthInMeters / modelSize.z;
-        
-        // Apply the calculated scale
-        clonedScene.scale.set(scaleX * scale, scaleY * scale, scaleZ * scale);
-        
-        // Center the model based on its base (bottom)
-        const centeredBox = new THREE.Box3().setFromObject(clonedScene);
-        clonedScene.position.y = -centeredBox.min.y; // Align the bottom of the model to y=0
-        clonedScene.position.x = -centeredBox.getCenter(new THREE.Vector3()).x;
-        clonedScene.position.z = -centeredBox.getCenter(new THREE.Vector3()).z;
-      } else {
-        // Fallback to default scaling and centering if dimensions aren't provided
-        const box = new THREE.Box3().setFromObject(clonedScene);
-        const center = box.getCenter(new THREE.Vector3());
-        clonedScene.position.sub(center);
-        clonedScene.position.y = 0;
-      }
-    }
-  }, [scene, textureUrl, dimensions, dimensionSku, scale]);
-
-  const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
-    e.stopPropagation();
-    onSelect();
-    setIsDragging(true);
-    dragStartPos.current = [...position] as [number, number, number];
-  };
-
-  const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
-    if (isDragging && modelRef.current) {
-      e.stopPropagation();
-      
-      // Get the intersection point with the ground plane
-      const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-      const intersectPoint = new THREE.Vector3();
-      
-      if (e.ray) {
-        e.ray.intersectPlane(groundPlane, intersectPoint);
-      } else {
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(e.point.x, e.point.y), e.camera);
-        raycaster.ray.intersectPlane(groundPlane, intersectPoint);
-      }
-      
-      // Calculate potential new position
-      let newX = intersectPoint.x;
-      let newZ = intersectPoint.z;
-      
-      // Boundary checks to keep furniture within the room
-      const halfWidth = modelBounds.width / 2;
-      const halfDepth = modelBounds.depth / 2;
-      
-      // Room boundaries (accounting for furniture size)
-      const roomMaxX = roomBounds.width / 2 - halfWidth;
-      const roomMinX = -roomBounds.width / 2 + halfWidth;
-      const roomMaxZ = roomBounds.length / 2 - halfDepth;
-      const roomMinZ = -roomBounds.length / 2 + halfDepth;
-      
-      // Constrain position within room boundaries
-      newX = Math.min(Math.max(newX, roomMinX), roomMaxX);
-      newZ = Math.min(Math.max(newZ, roomMinZ), roomMaxZ);
-      
-      // Check collision with other furniture
-      const currentFurnitureCollisionBox = {
-        minX: newX - halfWidth,
-        maxX: newX + halfWidth,
-        minZ: newZ - halfDepth,
-        maxZ: newZ + halfDepth
-      };
-      
-      let hasCollision = false;
-      
-      for (const item of otherFurniture) {
-        // Skip collision check with self
-        if (item.position[0] === position[0] && item.position[2] === position[2]) {
-          continue;
-        }
-        
-        // Calculate other item bounds
-        const otherWidth = item.dimensions 
-          ? convertToMeters(item.dimensions.width, item.dimensionSku || 'cm') 
-          : 1;
-        const otherDepth = item.dimensions 
-          ? convertToMeters(item.dimensions.depth, item.dimensionSku || 'cm') 
-          : 1;
-        
-        const otherX = item.position[0];
-        const otherZ = item.position[2];
-        
-        const otherCollisionBox = {
-          minX: otherX - otherWidth / 2,
-          maxX: otherX + otherWidth / 2,
-          minZ: otherZ - otherDepth / 2,
-          maxZ: otherZ + otherDepth / 2
-        };
-        
-        // Check for overlap between collision boxes
-        if (
-          currentFurnitureCollisionBox.minX < otherCollisionBox.maxX &&
-          currentFurnitureCollisionBox.maxX > otherCollisionBox.minX &&
-          currentFurnitureCollisionBox.minZ < otherCollisionBox.maxZ &&
-          currentFurnitureCollisionBox.maxZ > otherCollisionBox.minZ
-        ) {
-          hasCollision = true;
-          break;
-        }
-      }
-      
-      if (!hasCollision) {
-        onPositionChange([newX, position[1], newZ]);
-      }
-    }
-  };
-
-  const onPointerUp = () => {
-    setIsDragging(false);
-  };
-
-  return (
-    <group
-      ref={modelRef}
-      position={position}
-      rotation={rotation.map(r => r * Math.PI / 180) as [number, number, number]}
-      scale={[scale, scale, scale]}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerOut={onPointerUp}
-    >
-      {isSelected && (
-        <mesh position={[0, -0.05, 0]}>
-          <planeGeometry args={[2, 2]} />
-          <meshBasicMaterial color="#3498db" transparent opacity={0.3} />
-        </mesh>
-      )}
-    </group>
-  );
-};
-
-// Room component creates walls and floor
-const Room = ({ settings }: { settings: RoomSettings }) => {
-  const { width, length, height, wallColor, floorColor } = settings;
-  
-  return (
-    <group>
-      {/* Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[width, length]} />
-        <meshStandardMaterial color={floorColor} />
-      </mesh>
-      
-      {/* Back Wall */}
-      <mesh position={[0, height / 2, -length / 2]} receiveShadow>
-        <planeGeometry args={[width, height]} />
-        <meshStandardMaterial color={wallColor} side={THREE.DoubleSide} />
-      </mesh>
-      
-      {/* Left Wall */}
-      <mesh position={[-width / 2, height / 2, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-        <planeGeometry args={[length, height]} />
-        <meshStandardMaterial color={wallColor} side={THREE.DoubleSide} />
-      </mesh>
-      
-      {/* Right Wall */}
-      <mesh position={[width / 2, height / 2, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
-        <planeGeometry args={[length, height]} />
-        <meshStandardMaterial color={wallColor} side={THREE.DoubleSide} />
-      </mesh>
-    </group>
-  );
-}
-
-// Main room designer component
-function RoomDesigner() {
-  const searchParams = useSearchParams();
-  const initialProductId = searchParams.get('productId');
-  
-  const [furniture, setFurniture] = useState<FurnitureItem[]>([]);
+export default function DesignerPage() {
+  const [room, setRoom] = useState({ width: 8, length: 8, height: 3, wallColor: '#f5f5f5', floorColor: '#e0e0e0' });
+  const [furniture, setFurniture] = useState<FurnitureItemProps[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentProductId, setCurrentProductId] = useState<string | null>(initialProductId);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentProductId, setCurrentProductId] = useState<string | null>(null);
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
+  const [draggingEnabled, setDraggingEnabled] = useState(true);
   
-  const [roomSettings, setRoomSettings] = useState<RoomSettings>({
-    width: 10,
-    length: 10,
-    height: 3,
-    wallColor: '#f5f5f5',
-    floorColor: '#d2b48c',
-  });
+  // Camera related refs and state
+  const cameraRef = useRef<THREE.PerspectiveCamera>(null);
+  const controlsRef = useRef(null);
+  
+  // Initial camera position based on default room
+  const initialCameraPosition = [8, 5, 16];
 
-  const orbitControlsRef = useRef<OrbitControlsImpl>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  
-  // Camera position states
-  const defaultCameraPosition = useMemo(() => new THREE.Vector3(5, 5, 5), []);
-  const defaultTarget = useMemo(() => new THREE.Vector3(0, 0, 0), []);
-  
-  // Camera control functions
-  const resetCameraView = () => {
-    if (orbitControlsRef.current && cameraRef.current) {
-      // Reset camera position to default
-      cameraRef.current.position.copy(defaultCameraPosition);
-      orbitControlsRef.current.target.copy(defaultTarget);
-      
-      // Update orbit controls
-      orbitControlsRef.current.update();
-    }
-  };
-  
-  const setOverheadView = () => {
-    if (orbitControlsRef.current && cameraRef.current) {
-      // Calculate appropriate height based on room size
-      const height = Math.max(roomSettings.width, roomSettings.length) * 0.75;
-      
-      // Position camera directly above the center of the room
-      cameraRef.current.position.set(0, height, 0);
-      orbitControlsRef.current.target.set(0, 0, 0);
-      
-      // Update orbit controls
-      orbitControlsRef.current.update();
-    }
-  };
-  
-  const setFrontView = () => {
-    if (orbitControlsRef.current && cameraRef.current) {
-      // Position camera at the front of the room
-      cameraRef.current.position.set(0, roomSettings.height / 2, roomSettings.length);
-      orbitControlsRef.current.target.set(0, roomSettings.height / 2, 0);
-      
-      // Update orbit controls
-      orbitControlsRef.current.update();
-    }
-  };
+  // Room Presets
+  const presets = [
+    { name: 'Living Room', width: 8, length: 10, height: 3, wallColor: '#f0e6d2', floorColor: '#8b5a2b' },
+    { name: 'Bedroom', width: 6, length: 8, height: 3, wallColor: '#e6f0f2', floorColor: '#a0a0a0' },
+    { name: 'Office', width: 5, length: 6, height: 2.8, wallColor: '#ffffff', floorColor: '#c0c0c0' },
+    { name: 'Dining', width: 7, length: 7, height: 3, wallColor: '#fffbe6', floorColor: '#bfa76a' },
+    { name: 'Kids Room', width: 5, length: 5, height: 2.7, wallColor: '#fce4ec', floorColor: '#f8bbd0' },
+    { name: 'Bathroom', width: 5, length: 5, height: 2.5, wallColor: '#e0f7fa', floorColor: '#b2ebf2' },
+  ];
 
+  // Fetch all products
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setIsLoading(true);
-        const response = await productService.getAllProducts();
-        setProducts(response.documents as Product[]);
-        
-        // If there's an initial product ID, add it to the room
-        if (initialProductId) {
-          const product = response.documents.find(p => p.$id === initialProductId) as Product;
-          if (product && product.model_3d_url) {
-            addFurnitureToRoom(product);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    setIsLoading(true);
+    productService.getAllProducts().then(res => {
+      setProducts(res.documents as Product[]);
+      setIsLoading(false);
+    });
+  }, []);
 
-    fetchProducts();
-  }, [initialProductId]);
+  // To apply room presets
+  const applyPreset = (preset) => {
+    setRoom(preset);
+    
+    if (controlsRef.current) {
+      controlsRef.current.target.set(preset.width / 2, preset.height / 2, preset.length / 2);
+    }
+  };
 
-  const addFurnitureToRoom = (product: Product) => {
-    if (!product.model_3d_url) return;
+  // To add furniture to room
+  const addFurniture = (product: Product) => {
+    const unitFactor = getUnitConversionFactor(product.dim_sku || 'cm');
     
-    // Create dimensions object from individual dimension fields
-    const dimensions = {
-      width: product.dim_width || 1,
-      height: product.dim_height || 1,
-      depth: product.dim_depth || 1
-    };
-    
-    const newItem: FurnitureItem = {
+    const position = [
+      Math.random() * (room.width - 1) + 0.5, 
+      0,
+      Math.random() * (room.length - 1) + 0.5
+    ];
+
+    setFurniture(prev => [...prev, {
       id: product.$id,
+      name: product.name,
       model: product.model_3d_url,
-      position: [0, 0, 0],
-      rotation: [0, 0, 0],
+      position: position as [number, number, number],
+      rotation: [0, Math.random() * Math.PI * 2, 0] as [number, number, number],
       scale: 1,
       textureUrl: product.variation_texture_urls?.[0],
-      dimensions: dimensions, 
-      dimensionSku: product.dim_sku || 'cm' // Default to cm if not specified
-    };
-    
-    setFurniture(prev => [...prev, newItem]);
+      dimensions: {
+        width: product.dim_width || 1,
+        height: product.dim_height || 1,
+        depth: product.dim_depth || 1,
+      },
+      dimensionSku: product.dim_sku || 'cm',
+    } as FurnitureItemProps]);
+    setCurrentProductId(product.$id);
     setSelectedItemIndex(furniture.length);
+  };
+  
+  // Helper function to get unit conversion factor to meters
+  const getUnitConversionFactor = (unit: string) => {
+    switch(unit.toLowerCase()) {
+      case 'm': return 1;
+      case 'cm': return 0.01;
+      case 'in': return 0.0254;
+      case 'ft': return 0.3048;
+      default: return 1; // Default to m
+    }
   };
 
   const updateFurniturePosition = (index: number, newPosition: [number, number, number]) => {
-    setFurniture(prev => prev.map((item, i) => 
+    setFurniture(prev => prev.map((item, i) =>
       i === index ? { ...item, position: newPosition } : item
     ));
   };
 
   const updateFurnitureTexture = (index: number, textureUrl: string) => {
-    setFurniture(prev => prev.map((item, i) => 
+    setFurniture(prev => prev.map((item, i) =>
       i === index ? { ...item, textureUrl } : item
     ));
   };
@@ -454,7 +141,7 @@ function RoomDesigner() {
   };
 
   const adjustScale = (index: number, factor: number) => {
-    setFurniture(prev => prev.map((item, i) => 
+    setFurniture(prev => prev.map((item, i) =>
       i === index ? { ...item, scale: Math.max(0.1, item.scale * factor) } : item
     ));
   };
@@ -464,69 +151,123 @@ function RoomDesigner() {
     setSelectedItemIndex(null);
   };
 
-  const updateRoomDimensions = (dimensions: Partial<RoomSettings>) => {
-    setRoomSettings(prev => ({ ...prev, ...dimensions }));
+  const toggleDragging = () => {
+    setDraggingEnabled(prev => !prev);
+  };
+
+  const selectFurniture = (index) => {
+    setSelectedItemIndex(index);
+    const item = furniture[index];
+    if (item && controlsRef.current) {
+      // Focus on the selected item
+      controlsRef.current.target.set(item.position[0], item.position[1], item.position[2]);
+      controlsRef.current.update();
+    }
+  };
+
+  const updateRoomDimensions = (dimensions: Partial<typeof room>) => {
+    setRoom(prev => ({ ...prev, ...dimensions }));
   };
 
   // Filter products based on search query
   const filteredProducts = products
     .filter(product => product.model_3d_url)
-    .filter(product => 
-      searchQuery === '' || 
+    .filter(product =>
+      searchQuery === '' ||
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (product.category && product.category.toLowerCase().includes(searchQuery.toLowerCase()))
     );
+
+  const resetCameraView = () => {
+    if (controlsRef.current && cameraRef.current) {
+      cameraRef.current.position.set(initialCameraPosition[0], initialCameraPosition[1], initialCameraPosition[2]);
+      controlsRef.current.target.set(room.width / 2, room.height / 2, room.length / 2);
+      controlsRef.current.update();
+    }
+  };
+
+  const setOverheadView = () => {
+    if (controlsRef.current && cameraRef.current) {
+      const height = Math.max(room.width, room.length) * 0.75;
+      cameraRef.current.position.set(room.width / 2, height * 1.5, room.length / 2);
+      controlsRef.current.target.set(room.width / 2, 0, room.length / 2);
+      controlsRef.current.update();
+    }
+  };
+
+  const setFrontView = () => {
+    if (controlsRef.current && cameraRef.current) {
+      cameraRef.current.position.set(room.width / 2, room.height / 2, room.length * 1.5);
+      controlsRef.current.target.set(room.width / 2, room.height / 2, 0);
+      controlsRef.current.update();
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Navbar />
       
       <main className="flex-grow flex flex-col md:flex-row pt-20">
-        {/* 3D Canvas with improved layout */}
+        {/* 3D Canvas */}
         <div className="h-[60vh] md:h-auto md:w-[70%] relative bg-gray-50 border-b md:border-b-0">
-          <Canvas shadows camera={{ position: [5, 5, 5], fov: 50 }} style={{ background: 'linear-gradient(to bottom, #ffffff, #f8f8f8)' }}>
-            <ambientLight intensity={0.5} />
-            <directionalLight
-              position={[10, 10, 5]}
-              intensity={1}
-              castShadow
-              shadow-mapSize-width={1024}
-              shadow-mapSize-height={1024}
-            />
+          <Canvas 
+            shadows
+            gl={{ antialias: true, preserveDrawingBuffer: true }}
+            dpr={[1, 1.5]} // Limit DPR to prevent performance issues
+            style={{ 
+              width: '100%', 
+              height: '100%',
+              background: 'linear-gradient(to bottom, #ffffff, #f8f8f8)' 
+            }}
+          >
+            {/* Scene Setup */}
+            <ambientLight intensity={0.7} />
+            <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
             
-            <Room settings={roomSettings} />
+            {/* Room */}
+            <Room3D settings={room} />
             
-            {furniture.map((item, index) => (
-              <DraggableModel
-                key={`${item.id}-${index}`}
-                modelPath={item.model}
-                position={item.position}
-                rotation={item.rotation}
-                scale={item.scale}
-                dimensions={item.dimensions}
-                dimensionSku={item.dimensionSku}
-                textureUrl={item.textureUrl}
-                onPositionChange={(newPos) => updateFurniturePosition(index, newPos)}
-                onSelect={() => setSelectedItemIndex(index)}
-                isSelected={selectedItemIndex === index}
-                roomBounds={{ width: roomSettings.width, length: roomSettings.length }}
-                otherFurniture={furniture.filter((_, i) => i !== index)}
-              />
-            ))}
+            {/* Furniture */}
+            <Suspense fallback={null}>
+              {furniture.map((item, index) => (
+                <FurnitureItem 
+                  key={`${item.id}-${index}`}
+                  item={item} 
+                  index={index}
+                  isSelected={index === selectedItemIndex}
+                  roomDimensions={room}
+                  onSelect={() => selectFurniture(index)}
+                  onPositionUpdate={(newPos) => updateFurniturePosition(index, newPos)}
+                  draggingEnabled={draggingEnabled}
+                />
+              ))}
+            </Suspense>
             
-            <PerspectiveCamera makeDefault position={[5, 5, 5]} ref={cameraRef} />
-            <OrbitControls 
-              ref={orbitControlsRef}
-              enableDamping 
+            {/* Camera & Controls */}
+            <OrbitControls
+              ref={controlsRef}
+              enableDamping
               dampingFactor={0.1}
-              minDistance={1}
-              maxDistance={20}
-              camera={cameraRef.current || undefined}
+              minDistance={2}
+              maxDistance={30}
+              target={[room.width / 2, room.height / 2, room.length / 2]}
+              enabled={!draggingEnabled || selectedItemIndex === null}
             />
+            
+            <PerspectiveCamera
+              makeDefault
+              ref={cameraRef}
+              position={initialCameraPosition}
+              fov={45}
+              near={0.1}
+              far={1000}
+            />
+            
+            <Environment preset="sunset" background={false} />
           </Canvas>
           
-          {/* Top toolbar for important actions */}
+          {/* Top toolbar */}
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-full shadow-md px-4 py-2 flex items-center space-x-3 z-10">
             <button 
               className="p-2 rounded-full hover:bg-amber-50 text-amber-800 transition-colors"
@@ -557,9 +298,23 @@ function RoomDesigner() {
                 <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
               </svg>
             </button>
+            <div className="h-6 border-r border-gray-300"></div>
+            <button 
+              className={`p-2 rounded-full transition-colors ${
+                draggingEnabled 
+                ? "bg-amber-100 text-amber-800 hover:bg-amber-200" 
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+              title={draggingEnabled ? "Disable Dragging" : "Enable Dragging"}
+              onClick={toggleDragging}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+              </svg>
+            </button>
           </div>
-          
-          {/* Improved room settings panel */}
+
+          {/* Room Settings panel */}
           <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-md border border-gray-100">
             <h3 className="font-medium text-sm mb-3 flex items-center text-amber-800">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -571,13 +326,13 @@ function RoomDesigner() {
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-xs text-gray-600">Width</label>
-                  <span className="text-xs font-medium">{roomSettings.width}m</span>
+                  <span className="text-xs font-medium">{room.width}m</span>
                 </div>
                 <input 
                   type="range" 
                   min={3} 
                   max={20} 
-                  value={roomSettings.width} 
+                  value={room.width} 
                   onChange={(e) => updateRoomDimensions({ width: Number(e.target.value) })}
                   className="w-full accent-amber-600"
                 />
@@ -585,13 +340,13 @@ function RoomDesigner() {
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-xs text-gray-600">Length</label>
-                  <span className="text-xs font-medium">{roomSettings.length}m</span>
+                  <span className="text-xs font-medium">{room.length}m</span>
                 </div>
                 <input 
                   type="range" 
                   min={3} 
                   max={20} 
-                  value={roomSettings.length}
+                  value={room.length}
                   onChange={(e) => updateRoomDimensions({ length: Number(e.target.value) })}
                   className="w-full accent-amber-600"
                 />
@@ -599,14 +354,14 @@ function RoomDesigner() {
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-xs text-gray-600">Height</label>
-                  <span className="text-xs font-medium">{roomSettings.height}m</span>
+                  <span className="text-xs font-medium">{room.height}m</span>
                 </div>
                 <input 
                   type="range" 
                   min={2} 
                   max={5} 
                   step={0.1}
-                  value={roomSettings.height}
+                  value={room.height}
                   onChange={(e) => updateRoomDimensions({ height: Number(e.target.value) })}
                   className="w-full accent-amber-600"
                 />
@@ -617,11 +372,11 @@ function RoomDesigner() {
                   <div className="flex items-center">
                     <input 
                       type="color" 
-                      value={roomSettings.wallColor} 
+                      value={room.wallColor} 
                       onChange={(e) => updateRoomDimensions({ wallColor: e.target.value })}
                       className="w-8 h-8 rounded border overflow-hidden cursor-pointer"
                     />
-                    <span className="ml-2 text-xs uppercase">{roomSettings.wallColor}</span>
+                    <span className="ml-2 text-xs uppercase">{room.wallColor}</span>
                   </div>
                 </div>
                 <div>
@@ -629,25 +384,25 @@ function RoomDesigner() {
                   <div className="flex items-center">
                     <input 
                       type="color" 
-                      value={roomSettings.floorColor} 
+                      value={room.floorColor} 
                       onChange={(e) => updateRoomDimensions({ floorColor: e.target.value })}
                       className="w-8 h-8 rounded border overflow-hidden cursor-pointer"
                     />
-                    <span className="ml-2 text-xs uppercase">{roomSettings.floorColor}</span>
+                    <span className="ml-2 text-xs uppercase">{room.floorColor}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          
-          {/* Redesigned item controls */}
+
+          {/* Item controls */}
           {selectedItemIndex !== null && (
             <div className="absolute bottom-4 left-4 right-4 mx-auto bg-white p-4 rounded-lg shadow-md border border-gray-100 max-w-lg">
               <h3 className="font-medium text-sm mb-3 flex items-center text-amber-800">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
                 </svg>
-                Item Controls
+                {furniture[selectedItemIndex]?.name || "Item Controls"}
               </h3>
               
               <div className="flex space-x-3 mb-3 border-b border-gray-100 pb-3">
@@ -700,9 +455,69 @@ function RoomDesigner() {
                 </button>
               </div>
               
-              {/* Apply textures with color codes and variation names */}
+              {/* Position Controls */}
+              <div className="mb-3 border-b border-gray-100 pb-3">
+                <h4 className="text-xs text-gray-600 mb-2 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                  </svg>
+                  Position
+                </h4>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="flex flex-col">
+                    <label className="text-gray-500 mb-1">X</label>
+                    <input 
+                      type="number" 
+                      value={furniture[selectedItemIndex]?.position[0].toFixed(2)} 
+                      onChange={(e) => {
+                        const newPos = [...furniture[selectedItemIndex].position];
+                        newPos[0] = Number(e.target.value);
+                        updateFurniturePosition(selectedItemIndex, newPos as [number, number, number]);
+                      }}
+                      className="border rounded px-2 py-1"
+                      step="0.1"
+                      min="0"
+                      max={room.width}
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-gray-500 mb-1">Y</label>
+                    <input 
+                      type="number" 
+                      value={furniture[selectedItemIndex]?.position[1].toFixed(2)} 
+                      onChange={(e) => {
+                        const newPos = [...furniture[selectedItemIndex].position];
+                        newPos[1] = Number(e.target.value);
+                        updateFurniturePosition(selectedItemIndex, newPos as [number, number, number]);
+                      }}
+                      className="border rounded px-2 py-1"
+                      step="0.1"
+                      min="0"
+                      max={room.height}
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-gray-500 mb-1">Z</label>
+                    <input 
+                      type="number" 
+                      value={furniture[selectedItemIndex]?.position[2].toFixed(2)} 
+                      onChange={(e) => {
+                        const newPos = [...furniture[selectedItemIndex].position];
+                        newPos[2] = Number(e.target.value);
+                        updateFurniturePosition(selectedItemIndex, newPos as [number, number, number]);
+                      }}
+                      className="border rounded px-2 py-1"
+                      step="0.1"
+                      min="0"
+                      max={room.length}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Texture Options */}
               {(() => {
-                const currentProduct = products.find(p => p.$id === furniture[selectedItemIndex].id);
+                const currentProduct = products.find(p => p.$id === furniture[selectedItemIndex]?.id);
                 if (!currentProduct || !currentProduct.variation_texture_urls || !currentProduct.variation_names || !currentProduct.variation_color_codes) {
                   return null;
                 }
@@ -745,13 +560,36 @@ function RoomDesigner() {
             </div>
           )}
 
-          {/* Simple help tooltip */}
+          {/* Guide bar */}
           <div className="absolute bottom-4 left-4 bg-white bg-opacity-80 text-xs rounded-full px-3 py-1.5 shadow-sm border border-gray-100 text-gray-700 pointer-events-none">
-            <span>Drag to move • Left-click: Rotate • Right-click: Pan • Scroll: Zoom</span>
+            <span>{draggingEnabled ? "Drag to move furniture • Click to select" : "Click to select • Use controls to position"}</span>
           </div>
+          
+          {/* Furniture List Overlay*/}
+          {furniture.length > 0 && (
+            <div className="absolute top-4 left-4 bg-white p-3 rounded-lg shadow-md border border-gray-100 max-w-sm max-h-[300px] overflow-auto">
+              <h4 className="text-xs font-medium mb-2 text-gray-700">Furniture Items</h4>
+              <ul className="space-y-1">
+                {furniture.map((item, index) => (
+                  <li key={index}>
+                    <button
+                      onClick={() => selectFurniture(index)}
+                      className={`w-full text-left text-xs py-1.5 px-2 rounded-md ${
+                        selectedItemIndex === index 
+                          ? "bg-amber-100 text-amber-800" 
+                          : "hover:bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {item.name || `Item ${index + 1}`}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
         
-        {/* Redesigned product selection sidebar with flex layout to position elements */}
+        {/* Product selection sidebar */}
         <div className="md:w-[30%] bg-white p-4 overflow-y-auto h-[40vh] md:h-auto border-l border-t md:border-t-0 border-gray-300 shadow-sm flex flex-col">
           <h2 className="font-medium text-lg mb-4 text-amber-800 border-b pb-2 border-amber-100 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -760,7 +598,7 @@ function RoomDesigner() {
             Add Furniture
           </h2>
           
-          {/* Enhanced search bar */}
+          {/* Search bar */}
           <div className="mb-4 relative">
             <input
               type="text"
@@ -790,7 +628,7 @@ function RoomDesigner() {
             )}
           </div>
           
-          {/* Product list with flex-grow to take available space */}
+          {/* Product list */}
           <div className="flex-grow overflow-y-auto mb-4">
             {isLoading ? (
               <div className="flex items-center justify-center h-32">
@@ -819,10 +657,7 @@ function RoomDesigner() {
                     key={product.$id} 
                     className={`bg-white rounded-lg border hover:shadow-md transition-all p-2 cursor-pointer 
                       ${currentProductId === product.$id ? 'ring-2 ring-amber-500 border-transparent shadow-sm' : 'border-gray-200 hover:border-amber-200'}`}
-                    onClick={() => {
-                      setCurrentProductId(product.$id);
-                      addFurnitureToRoom(product);
-                    }}
+                    onClick={() => addFurniture(product)}
                   >
                     <div className="aspect-square relative mb-2 rounded-md overflow-hidden bg-gray-100 group">
                       {product.main_image_url ? (
@@ -856,7 +691,7 @@ function RoomDesigner() {
             )}
           </div>
           
-          {/* Room presets section fixed at bottom */}
+          {/* Room presets */}
           <div className="border-t border-gray-100 pt-4 mt-auto">
             <h3 className="font-medium text-sm mb-3 text-gray-700 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -867,7 +702,7 @@ function RoomDesigner() {
             <div className="grid grid-cols-2 gap-3">
               <button 
                 className="border border-gray-200 hover:border-amber-300 p-3 rounded-lg hover:bg-amber-50 transition-all text-left"
-                onClick={() => setRoomSettings({
+                onClick={() => setRoom({
                   width: 8,
                   length: 10,
                   height: 3,
@@ -884,7 +719,7 @@ function RoomDesigner() {
               
               <button 
                 className="border border-gray-200 hover:border-amber-300 p-3 rounded-lg hover:bg-amber-50 transition-all text-left"
-                onClick={() => setRoomSettings({
+                onClick={() => setRoom({
                   width: 6,
                   length: 8,
                   height: 3,
@@ -901,7 +736,7 @@ function RoomDesigner() {
               
               <button 
                 className="border border-gray-200 hover:border-amber-300 p-3 rounded-lg hover:bg-amber-50 transition-all text-left"
-                onClick={() => setRoomSettings({
+                onClick={() => setRoom({
                   width: 5,
                   length: 6,
                   height: 2.8,
@@ -918,7 +753,7 @@ function RoomDesigner() {
               
               <button 
                 className="border border-gray-200 hover:border-amber-300 p-3 rounded-lg hover:bg-amber-50 transition-all text-left"
-                onClick={() => setRoomSettings({
+                onClick={() => setRoom({
                   width: 5,
                   length: 5,
                   height: 2.8,
@@ -952,22 +787,215 @@ function RoomDesigner() {
   );
 }
 
-// Page component with Suspense boundary
-export default function RoomDesignerPage() {
+function FurnitureItem({ 
+  item, 
+  index, 
+  isSelected, 
+  roomDimensions,
+  onSelect, 
+  onPositionUpdate,
+  draggingEnabled 
+}) {
+  const { scene } = useGLTF(item.model, true);
+  const groupRef = useRef();
+  const { camera } = useThree();
+  const [isDragging, setIsDragging] = useState(false);
+  const [snapPosition, setSnapPosition] = useState([...item.position]);
+  const [modelLoaded, setModelLoaded] = useState(false);
+  
+  // Load texture if available
+  useEffect(() => {
+    if (!scene) return;
+    
+    if (item.textureUrl) {
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.load(item.textureUrl, (texture) => {
+        scene.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.material) {
+            // Apply texture to the material
+            child.material.map = texture;
+            child.material.needsUpdate = true;
+          }
+        });
+      });
+    }
+  }, [scene, item.textureUrl]);
+  
+  // Handle dragging
+  useEffect(() => {
+    if (!groupRef.current || !draggingEnabled) return;
+    
+    const controls = new DragControls([groupRef.current], camera, document.querySelector('canvas'));
+    
+    controls.addEventListener('dragstart', () => {
+      setIsDragging(true);
+      onSelect(); // Select this item when drag starts
+    });
+    
+    controls.addEventListener('drag', (event) => {
+      // Keep Y position (height) constant during drag
+      const y = item.position[1];
+      event.object.position.y = y;
+      
+      // Constrain to room boundaries
+      const halfWidth = item.dimensions.width / 2;
+      const halfDepth = item.dimensions.depth / 2;
+      
+      event.object.position.x = Math.max(halfWidth, Math.min(roomDimensions.width - halfWidth, event.object.position.x));
+      event.object.position.z = Math.max(halfDepth, Math.min(roomDimensions.length - halfDepth, event.object.position.z));
+      
+      // Update position state while dragging
+      setSnapPosition([event.object.position.x, y, event.object.position.z]);
+    });
+    
+    controls.addEventListener('dragend', () => {
+      setIsDragging(false);
+      // Update the parent component with the new position
+      onPositionUpdate([groupRef.current.position.x, groupRef.current.position.y, groupRef.current.position.z]);
+    });
+    
+    return () => {
+      controls.dispose();
+    };
+  }, [camera, draggingEnabled, item.dimensions, roomDimensions]);
+  
+  // Update position from props
+  useEffect(() => {
+    if (groupRef.current && !isDragging) {
+      groupRef.current.position.set(...item.position);
+    }
+  }, [item.position, isDragging]);
+  
+  // Apply correct dimensions based on the model and database dimensions
+  useEffect(() => {
+    if (!scene || modelLoaded) return;
+    
+    // Use a small delay to ensure scene is fully loaded
+    const timer = setTimeout(() => {
+      if (item.dimensions) {
+        // Calculate real-world size in meters based on dimension SKU
+        const unitMultiplier = getUnitConversionFactor(item.dimensionSku);
+        
+        const width = item.dimensions.width * unitMultiplier;
+        const height = item.dimensions.height * unitMultiplier;
+        const depth = item.dimensions.depth * unitMultiplier;
+        
+        // Get actual model dimensions
+        const box = new THREE.Box3().setFromObject(scene);
+        const modelSize = box.getSize(new THREE.Vector3());
+        
+        // Calculate and apply scale factors for each dimension
+        if (modelSize.x > 0 && modelSize.y > 0 && modelSize.z > 0) {
+          const scaleX = width / modelSize.x;
+          const scaleY = height / modelSize.y;
+          const scaleZ = depth / modelSize.z;
+          
+          scene.scale.set(scaleX, scaleY, scaleZ);
+          setModelLoaded(true);
+        }
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [scene, item.dimensions, item.dimensionSku]);
+  
+  // Optimized clone of the 3D model
+  const clonedModel = useMemo(() => {
+    if (!scene) return null;
+    return scene.clone();
+  }, [scene]);
+
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex flex-col bg-white">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-800 mx-auto mb-4"></div>
-            <p className="text-gray-700">Loading Room Designer...</p>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    }>
-      <RoomDesigner />
-    </Suspense>
+    <group
+      ref={groupRef}
+      position={item.position}
+      rotation={item.rotation}
+      scale={[item.scale, item.scale, item.scale]}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
+    >
+      {clonedModel ? <primitive object={clonedModel} /> : (
+        <mesh>
+          <boxGeometry args={[
+            item.dimensions.width * getUnitConversionFactor(item.dimensionSku), 
+            item.dimensions.height * getUnitConversionFactor(item.dimensionSku), 
+            item.dimensions.depth * getUnitConversionFactor(item.dimensionSku)
+          ]} />
+          <meshStandardMaterial color={isSelected ? "#f59e0b" : "#cccccc"} />
+        </mesh>
+      )}
+      
+      {/* Selection indicator */}
+      {isSelected && (
+        <group>
+          <Html center>
+            <div className="w-6 h-6 rounded-full bg-amber-500 shadow-lg border-2 border-white -mt-6 flex items-center justify-center text-white text-xs font-bold">
+              {index + 1}
+            </div>
+          </Html>
+          <mesh position={[0, 0.01, 0]} rotation={[-Math.PI/2, 0, 0]}>
+            <ringGeometry args={[
+              Math.max(item.dimensions.width, item.dimensions.depth) * getUnitConversionFactor(item.dimensionSku) * 0.5,
+              Math.max(item.dimensions.width, item.dimensions.depth) * getUnitConversionFactor(item.dimensionSku) * 0.55,
+              32
+            ]} />
+            <meshBasicMaterial color="#f59e0b" opacity={0.5} transparent />
+          </mesh>
+        </group>
+      )}
+    </group>
+  );
+}
+
+// Helper function for unit conversion in component scope
+function getUnitConversionFactor(unit: string) {
+  switch(unit?.toLowerCase()) {
+    case 'm': return 1;
+    case 'cm': return 0.01;
+    case 'in': return 0.0254;
+    case 'ft': return 0.3048;
+    default: return 1; // Default to m if unknown
+  }
+}
+
+function Room3D({ settings }: { settings: { width: number, length: number, height: number, wallColor: string, floorColor: string } }) {
+  const { width, length, height, wallColor, floorColor } = settings;
+  
+  // Use memo to prevent unnecessary rebuilding of geometry
+  const floorGeometry = useMemo(() => new THREE.PlaneGeometry(width, length), [width, length]);
+  const wallGeometry1 = useMemo(() => new THREE.PlaneGeometry(width, height), [width, height]);
+  const wallGeometry2 = useMemo(() => new THREE.PlaneGeometry(length, height), [length, height]);
+  
+  return (
+    <group>
+      {/* Floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[width/2, 0, length/2]} receiveShadow>
+        <primitive object={floorGeometry} />
+        <meshStandardMaterial color={floorColor} roughness={0.8} />
+      </mesh>
+      
+      {/* Walls */}
+      <mesh position={[width/2, height/2, 0]} receiveShadow>
+        <primitive object={wallGeometry1} />
+        <meshStandardMaterial color={wallColor} roughness={0.5} />
+      </mesh>
+      
+      <mesh position={[0, height/2, length/2]} rotation={[0, Math.PI/2, 0]} receiveShadow>
+        <primitive object={wallGeometry2} />
+        <meshStandardMaterial color={wallColor} roughness={0.5} />
+      </mesh>
+      
+      <mesh position={[width, height/2, length/2]} rotation={[0, -Math.PI/2, 0]} receiveShadow>
+        <primitive object={wallGeometry2} />
+        <meshStandardMaterial color={wallColor} roughness={0.5} />
+      </mesh>
+      
+      <mesh position={[width/2, height/2, length]} rotation={[0, Math.PI, 0]} receiveShadow>
+        <primitive object={wallGeometry1} />
+        <meshStandardMaterial color={wallColor} roughness={0.5} />
+      </mesh>
+    </group>
   );
 }
