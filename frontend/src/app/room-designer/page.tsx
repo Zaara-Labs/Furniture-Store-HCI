@@ -2,14 +2,15 @@
 
 import { useState, useRef, useEffect, Suspense, useMemo } from 'react';
 import Navbar from '@/components/Navbar';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, useGLTF, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { productService } from '@/services/appwrite';
 import { Product } from '@/types/collections/Product';
 import Image from 'next/image';
 import Link from 'next/link';
-import { DragControls } from 'three/examples/jsm/controls/DragControls';
+import { OrbitControls as OrbitControlsImpl, GLTF } from 'three-stdlib';
+import { DragControls } from 'three/examples/jsm/controls/DragControls.js';
 
 interface FurnitureItemProps {
   id: string;
@@ -36,23 +37,22 @@ export default function DesignerPage() {
   const [currentProductId, setCurrentProductId] = useState<string | null>(null);
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
   const [draggingEnabled, setDraggingEnabled] = useState(true);
-  
   // Camera related refs and state
   const cameraRef = useRef<THREE.PerspectiveCamera>(null);
-  const controlsRef = useRef(null);
+  const controlsRef = useRef<OrbitControlsImpl>(null); // Specify the type for OrbitControls ref
   
   // Initial camera position based on default room
-  const initialCameraPosition = [8, 5, 16];
+  const initialCameraPosition: [number, number, number] = [8, 5, 16];
 
-  // Room Presets
-  const presets = [
-    { name: 'Living Room', width: 8, length: 10, height: 3, wallColor: '#f0e6d2', floorColor: '#8b5a2b' },
-    { name: 'Bedroom', width: 6, length: 8, height: 3, wallColor: '#e6f0f2', floorColor: '#a0a0a0' },
-    { name: 'Office', width: 5, length: 6, height: 2.8, wallColor: '#ffffff', floorColor: '#c0c0c0' },
-    { name: 'Dining', width: 7, length: 7, height: 3, wallColor: '#fffbe6', floorColor: '#bfa76a' },
-    { name: 'Kids Room', width: 5, length: 5, height: 2.7, wallColor: '#fce4ec', floorColor: '#f8bbd0' },
-    { name: 'Bathroom', width: 5, length: 5, height: 2.5, wallColor: '#e0f7fa', floorColor: '#b2ebf2' },
-  ];
+  // // Room Presets
+  // const presets = [
+  //   { name: 'Living Room', width: 8, length: 10, height: 3, wallColor: '#f0e6d2', floorColor: '#8b5a2b' },
+  //   { name: 'Bedroom', width: 6, length: 8, height: 3, wallColor: '#e6f0f2', floorColor: '#a0a0a0' },
+  //   { name: 'Office', width: 5, length: 6, height: 2.8, wallColor: '#ffffff', floorColor: '#c0c0c0' },
+  //   { name: 'Dining', width: 7, length: 7, height: 3, wallColor: '#fffbe6', floorColor: '#bfa76a' },
+  //   { name: 'Kids Room', width: 5, length: 5, height: 2.7, wallColor: '#fce4ec', floorColor: '#f8bbd0' },
+  //   { name: 'Bathroom', width: 5, length: 5, height: 2.5, wallColor: '#e0f7fa', floorColor: '#b2ebf2' },
+  // ];
 
   // Fetch all products
   useEffect(() => {
@@ -63,21 +63,24 @@ export default function DesignerPage() {
     });
   }, []);
 
-  // To apply room presets
-  const applyPreset = (preset) => {
-    setRoom(preset);
+  // // Define type for presets based on the array structure
+  // type RoomPreset = typeof presets[number];
+
+  // // To apply room presets
+  // const applyPreset = (preset: RoomPreset) => {
+  //   setRoom(preset);
     
-    if (controlsRef.current) {
-      controlsRef.current.target.set(preset.width / 2, preset.height / 2, preset.length / 2);
-    }
-  };
+  //   if (controlsRef.current) {
+  //     controlsRef.current.target.set(preset.width / 2, preset.height / 2, preset.length / 2);
+  //   }
+  // };
 
   // To add furniture to room
   const addFurniture = (product: Product) => {
-    const unitFactor = getUnitConversionFactor(product.dim_sku || 'cm');
+    // const unitFactor = getUnitConversionFactor(product.dim_sku || 'cm');
     
     const position = [
-      Math.random() * (room.width - 1) + 0.5, 
+      Math.random() * (room.width - 1) + 0.5,
       0,
       Math.random() * (room.length - 1) + 0.5
     ];
@@ -101,16 +104,16 @@ export default function DesignerPage() {
     setSelectedItemIndex(furniture.length);
   };
   
-  // Helper function to get unit conversion factor to meters
-  const getUnitConversionFactor = (unit: string) => {
-    switch(unit.toLowerCase()) {
-      case 'm': return 1;
-      case 'cm': return 0.01;
-      case 'in': return 0.0254;
-      case 'ft': return 0.3048;
-      default: return 1; // Default to m
-    }
-  };
+  // // Helper function to get unit conversion factor to meters
+  // const getUnitConversionFactor = (unit: string) => {
+  //   switch(unit.toLowerCase()) {
+  //     case 'm': return 1;
+  //     case 'cm': return 0.01;
+  //     case 'in': return 0.0254;
+  //     case 'ft': return 0.3048;
+  //     default: return 1; // Default to m
+  //   }
+  // };
 
   const updateFurniturePosition = (index: number, newPosition: [number, number, number]) => {
     console.log(`Updating position of item ${index} to ${newPosition}`);
@@ -155,9 +158,9 @@ export default function DesignerPage() {
     setDraggingEnabled(prev => !prev);
   };
 
-  const selectFurniture = (index) => {
+  const selectFurniture = (index: number): void => {
     setSelectedItemIndex(index);
-    const item = furniture[index];
+    const item: FurnitureItemProps | undefined = furniture[index];
     if (item && controlsRef.current) {
       // Focus on the selected item
       controlsRef.current.target.set(item.position[0], item.position[1], item.position[2]);
@@ -230,18 +233,18 @@ export default function DesignerPage() {
             
             {/* Furniture */}
             <Suspense fallback={null}>
-              {furniture.map((item, index) => (
-                <FurnitureItem 
+                {furniture.map((item: FurnitureItemProps, index: number) => (
+                <FurnitureItem
                   key={`${item.id}-${index}`}
-                  item={item} 
+                  item={item}
                   index={index}
                   isSelected={index === selectedItemIndex}
-                  roomDimensions={room}
+                  roomDimensions={room} // Assuming room state type matches expected { width: number, length: number, height: number }
                   onSelect={() => selectFurniture(index)}
-                  onPositionUpdate={(newPos) => updateFurniturePosition(index, newPos)}
+                  onPositionUpdate={(newPos: [number, number, number]) => updateFurniturePosition(index, newPos)}
                   draggingEnabled={draggingEnabled}
                 />
-              ))}
+                ))}
             </Suspense>
             
             {/* Camera & Controls */}
@@ -795,9 +798,18 @@ function FurnitureItem({
   onSelect,
   onPositionUpdate,
   draggingEnabled
+}: { // Add explicit type for props
+  item: FurnitureItemProps;
+  index: number;
+  isSelected: boolean;
+  roomDimensions: { width: number; length: number; height: number };
+  onSelect: () => void;
+  onPositionUpdate: (newPos: [number, number, number]) => void;
+  draggingEnabled: boolean;
 }) {
-  const { scene } = useGLTF(item.model, true);
-  const groupRef = useRef();
+  const gltf = useGLTF(item.model, true) as GLTF; // Cast the result
+  const scene = gltf.scene; // Access scene property
+  const groupRef = useRef<THREE.Group>(null); // Typed ref
   const { camera } = useThree();
   const [isDragging, setIsDragging] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
@@ -833,14 +845,22 @@ function FurnitureItem({
     
     const controls = new DragControls([groupRef.current], camera, document.querySelector('canvas'));
     
-    controls.addEventListener('dragstart', (event) => {
-      console.log('Drag started:', groupRef.current.position);
+    // Define a basic type for the drag event object if not already defined elsewhere
+    interface DragEvent {
+      type: string;
+      object: THREE.Object3D;
+    }
+
+    controls.addEventListener('dragstart', () => { // Added inline type for the event object
+      console.log('Drag started:', groupRef.current?.position); // Added optional chaining for safety
       setIsDragging(true);
       onSelect(); // Select this item when drag starts
       console.log('Room dimension:', roomDimensions);
     });
     
-    controls.addEventListener('drag', (event) => {
+    controls.addEventListener('drag', (event: DragEvent) => {
+      if (!groupRef.current) return;
+      
       // Keep Y position (height) constant during drag
       const y = item.position[1];
       event.object.position.y = y;
@@ -858,9 +878,12 @@ function FurnitureItem({
       event.object.position.z = Math.max(halfDepth, Math.min(roomDimensions.length - halfDepth, abs_z)) - groupRef.current.position.z;
     });
     
-    controls.addEventListener('dragend', (event) => {
+    controls.addEventListener('dragend', (event: DragEvent) => {
       console.log('Drag ended:', event.object.position);
       setIsDragging(false);
+      
+      if (!groupRef.current) return;
+      
       console.log('Initial absolute x', groupRef.current.position.x);
       console.log('Initial absolute z', groupRef.current.position.z);
       
