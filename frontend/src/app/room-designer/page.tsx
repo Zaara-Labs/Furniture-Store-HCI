@@ -632,7 +632,7 @@ export default function DesignerPage() {
           </div>
           
           {/* Product list */}
-          <div className="flex-grow overflow-y-auto mb-4">
+          <div className="flex-grow overflow-y-auto mb-4 px-2 pt-2">
             {isLoading ? (
               <div className="flex items-center justify-center h-32">
                 <div className="flex flex-col items-center">
@@ -672,7 +672,7 @@ export default function DesignerPage() {
                             className="object-cover rounded group-hover:scale-105 transition-transform"
                             sizes="(max-width: 768px) 50vw, 15vw"
                           />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all flex items-center justify-center">
+                          <div className="absolute inset-0 bg-transparent bg-opacity-0 group-hover:bg-opacity-10 transition-all flex items-center justify-center">
                             <button className="bg-amber-700 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
