@@ -23,6 +23,7 @@ const ProductCatalog = ({
   onApplyRoomPreset
 }: ProductCatalogProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRoomPresetsCollapsed, setIsRoomPresetsCollapsed] = useState(false);
 
   // Filter products based on search query
   const filteredProducts = products
@@ -35,7 +36,7 @@ const ProductCatalog = ({
     );
 
   return (
-    <div className="md:w-[30%] bg-white p-4 overflow-y-auto h-[40vh] md:h-auto border-l border-t md:border-t-0 border-gray-300 shadow-sm flex flex-col">
+    <div className="md:w-[30%] bg-white p-4 flex flex-col h-full max-h-[calc(100vh-4rem)] border-l border-t md:border-t-0 border-gray-300 shadow-sm">
       <h2 className="font-medium text-lg mb-4 text-amber-800 border-b pb-2 border-amber-100 flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
           <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z" />
@@ -73,7 +74,7 @@ const ProductCatalog = ({
         )}
       </div>
       
-      {/* Product list */}
+      {/* Product list - with flex-grow to fill available space */}
       <div className="flex-grow overflow-y-auto mb-4 px-2 pt-2">
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
@@ -105,10 +106,10 @@ const ProductCatalog = ({
                 onClick={() => onAddFurniture(product)}
               >
                 <div className="aspect-square relative mb-2 rounded-md overflow-hidden bg-gray-100 group">
-                  {product.main_image_url ? (
+                  {product.main_image_url || (product.variation_images && product.variation_images.length > 0) ? (
                     <>
                       <Image 
-                        src={product.main_image_url}
+                        src={product.main_image_url ? product.main_image_url : (product.variation_images && product.variation_images.length > 0 ? product.variation_images[0] : '')}
                         alt={product.name}
                         fill
                         className="object-cover rounded group-hover:scale-105 transition-transform"
@@ -136,43 +137,68 @@ const ProductCatalog = ({
         )}
       </div>
       
-      {/* Room presets */}
-      <div className="border-t border-gray-100 pt-4 mt-auto">
-        <h3 className="font-medium text-sm mb-3 text-gray-700 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-          </svg>
-          Room Presets
-        </h3>
-        <div className="grid grid-cols-2 gap-3">
-          {roomPresets.slice(0, 4).map((preset, index) => (
-            <button 
-              key={index}
-              className="border border-gray-200 hover:border-amber-300 p-3 rounded-lg hover:bg-amber-50 transition-all text-left"
-              onClick={() => onApplyRoomPreset(preset)}
-            >
-              <div className="flex items-center">
-                <span 
-                  className="w-4 h-4 rounded-full border border-gray-300 mr-2"
-                  style={{ backgroundColor: preset.wallColor }}
-                ></span>
-                <span className="text-sm font-medium">{preset.name}</span>
-              </div>
-              <p className="text-gray-500 text-xs mt-1">{preset.width}m × {preset.length}m space</p>
-            </button>
-          ))}
-        </div>
-      
-        <div className="mt-4 text-center">
-          <Link 
-            href="/shop" 
-            className="inline-flex items-center justify-center px-4 py-2 text-amber-800 border border-amber-300 bg-amber-50 rounded-md hover:bg-amber-100 transition-colors font-medium"
-          >
+      {/* Room presets - Collapsible section */}
+      <div className="border-t border-gray-100 pt-2 mt-1 min-h-[40px] shrink-0">
+        <button 
+          onClick={() => setIsRoomPresetsCollapsed(!isRoomPresetsCollapsed)}
+          className="font-medium text-sm mb-2 text-gray-700 flex items-center justify-between w-full hover:bg-amber-50 p-2 rounded transition-colors"
+          aria-expanded={!isRoomPresetsCollapsed}
+          aria-controls="room-presets-panel"
+        >
+          <div className="flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
+              <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
-            Browse More Products
-          </Link>
+            <span>Room Presets</span>
+          </div>
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className={`h-4 w-4 transition-transform ${isRoomPresetsCollapsed ? 'rotate-180' : ''}`}
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        
+        {/* Collapsible content */}
+        <div 
+          id="room-presets-panel"
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            isRoomPresetsCollapsed ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'
+          }`}
+        >
+          <div className="grid grid-cols-2 gap-3 mb-4 overflow-y-auto max-h-[200px] pr-1">
+            {roomPresets.map((preset, index) => (
+              <button 
+                key={index}
+                className="border border-gray-200 hover:border-amber-300 p-3 rounded-lg hover:bg-amber-50 transition-all text-left"
+                onClick={() => onApplyRoomPreset(preset)}
+              >
+                <div className="flex items-center">
+                  <span 
+                    className="w-4 h-4 rounded-full border border-gray-300 mr-2"
+                    style={{ backgroundColor: preset.wallColor }}
+                  ></span>
+                  <span className="text-sm font-medium">{preset.name}</span>
+                </div>
+                <p className="text-gray-500 text-xs mt-1">{preset.width}m × {preset.length}m space</p>
+              </button>
+            ))}
+          </div>
+      
+          <div className="text-center">
+            <Link 
+              href="/shop" 
+              className="inline-flex items-center justify-center px-4 py-2 text-amber-800 border border-amber-300 bg-amber-50 rounded-md hover:bg-amber-100 transition-colors font-medium"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
+              </svg>
+              Browse More Products
+            </Link>
+          </div>
         </div>
       </div>
     </div>
