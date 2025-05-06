@@ -5,6 +5,7 @@ import { productService } from '@/services/appwrite';
 import { RoomSettings, FurnitureItemProps } from '@/types/room-designer';
 import { Product } from '@/types/collections/Product';
 import { getUnitConversionFactor } from '@/utils/roomUtils';
+import { randomBytes } from 'crypto';
 
 export function useRoomDesigner() {
   // Room state
@@ -38,7 +39,7 @@ export function useRoomDesigner() {
     setRoom(prev => ({ ...prev, ...dimensions }));
   };
 
-  // Add furniture to room
+  // Add furniture to room with better initial placement
   const addFurniture = (product: Product) => {
     // Skip if product has no 3D model
     if (!product.model_3d_url) {
@@ -46,36 +47,68 @@ export function useRoomDesigner() {
       return;
     }
 
-    const position = [
-      Math.random() * (room.width - 1) + 0.5,
-      0,
-      Math.random() * (room.length - 1) + 0.5
+    // Get product dimensions (with fallback values)
+    const width = product.dim_width || 1;
+    const height = product.dim_height || 1;
+    const depth = product.dim_depth || 1;
+    const dimensionSku = product.dim_sku || 'cm';
+
+    // Convert dimensions for placement calculations (if needed)
+    const unitFactor = getUnitConversionFactor(dimensionSku);
+
+    // Calculate initial position - center of room with small offset
+    // This keeps Y at 0 to maintain objects on the floor
+    const initialPosition: [number, number, number] = [
+      room.width / 2 + (Math.random() * 1 - 0.5),
+      0, // Keep on floor
+      room.length / 2 + (Math.random() * 1 - 0.5)
     ];
 
-    setFurniture(prev => [...prev, {
-      id: product.$id,
+    // Create new furniture item
+    const newFurniture: FurnitureItemProps = {
+      id: (product.$id as string),
       name: product.name,
       model: product.model_3d_url,
-      position: position as [number, number, number],
+      position: initialPosition,
       rotation: [0, 0, 0] as [number, number, number],
       scale: 1,
       textureUrl: product.variation_texture_urls?.[0] || '',
       dimensions: {
-        width: product.dim_width || 1,
-        height: product.dim_height || 1,
-        depth: product.dim_depth || 1,
+        width,
+        height,
+        depth,
       },
-      dimensionSku: product.dim_sku || 'cm',
-    }]);
+      dimensionSku,
+    };
 
+    // Update furniture state
+    setFurniture(prev => [...prev, newFurniture]);
     setCurrentProductId(product.$id);
-    setSelectedItemIndex(furniture.length);
+
+    // Select the newly added item (important: needs to be the next index)
+    const newIndex = furniture.length;
+    setSelectedItemIndex(newIndex);
   };
 
-  // Update furniture position
+  // Simple but robust position update with boundary enforcement
   const updateFurniturePosition = (index: number, newPosition: [number, number, number]) => {
+    if (index < 0 || index >= furniture.length) return;
+
+    const item = furniture[index];
+    const unitFactor = getUnitConversionFactor(item.dimensionSku);
+    const halfWidth = (item.dimensions.width * unitFactor) / 2;
+    const halfDepth = (item.dimensions.depth * unitFactor) / 2;
+
+    // Apply room boundary constraints
+    const constrainedPosition: [number, number, number] = [
+      Math.max(halfWidth, Math.min(room.width - halfWidth, newPosition[0])),
+      newPosition[1], // Keep existing Y position
+      Math.max(halfDepth, Math.min(room.length - halfDepth, newPosition[2]))
+    ];
+
+    // Update the furniture item with the new position
     setFurniture(prev => prev.map((item, i) =>
-      i === index ? { ...item, position: newPosition } : item
+      i === index ? { ...item, position: constrainedPosition } : item
     ));
   };
 

@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
 import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { DragControls } from 'three/examples/jsm/controls/DragControls.js';
 import { FurnitureComponentProps } from '@/types/room-designer';
 import { getUnitConversionFactor } from '@/utils/roomUtils';
 import { GLTF } from 'three-stdlib';
@@ -190,63 +189,126 @@ const FurnitureItem = ({
     }
   }, [item.position, isDragging]);
   
-  // Handle dragging - now using consistent position updates
+  // Handle dragging
   useEffect(() => {
     if (!groupRef.current || !draggingEnabled || !modelLoaded) return;
-    
-    const controls = new DragControls([groupRef.current], camera, document.querySelector('canvas'));
-    
-    // Define a basic type for the drag event object if not already defined elsewhere
-    interface DragEvent {
-      type: string;
-      object: THREE.Object3D;
-    }
 
-    controls.addEventListener('dragstart', () => {
-      console.log('Drag started:', groupRef.current?.position);
-      setIsDragging(true);
-      onSelect(); // Select this item when drag starts
-    });
+    // Create a plane for XZ movement constraint (parallel to the floor)
+    const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const fixedY = item.position[1]; // Store Y position to maintain it during drag
     
-    controls.addEventListener('drag', (event: DragEvent) => {
+    // Raycaster for plane intersection
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const intersectionPoint = new THREE.Vector3();
+    
+    // Track drag state
+    let isDragging = false;
+    let dragOffset = new THREE.Vector3();
+    
+    // Get canvas for event handling
+    const canvas = document.querySelector('canvas');
+    if (!canvas) return;
+
+    // Start dragging
+    const onPointerDown = (event: PointerEvent) => {
       if (!groupRef.current) return;
       
-      // Keep Y position (height) constant during drag
-      const y = item.position[1];
-      event.object.position.y = y;
-
-      // Calculate absolute position of the item from the relative coordinates
-      const abs_x = groupRef.current.position.x + event.object.position.x;
-      const abs_z = groupRef.current.position.z + event.object.position.z;
+      // Calculate mouse position in normalized device coordinates
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       
-      // Constrain to room boundaries
-      const halfWidth = item.dimensions.width * getUnitConversionFactor(item.dimensionSku) / 2;
-      const halfDepth = item.dimensions.depth * getUnitConversionFactor(item.dimensionSku) / 2;
-
-      event.object.position.x = Math.max(halfWidth, Math.min(roomDimensions.width - halfWidth, abs_x)) - groupRef.current.position.x;
-      event.object.position.z = Math.max(halfDepth, Math.min(roomDimensions.length - halfDepth, abs_z)) - groupRef.current.position.z;
-    });
-    
-    controls.addEventListener('dragend', (event: DragEvent) => {
-      console.log('Drag ended:', event.object.position);
-      setIsDragging(false);
+      // Set raycaster from camera
+      raycaster.setFromCamera(mouse, camera);
       
-      if (!groupRef.current) return;
-      
-      // Use the same update function for both drag and position controls
-      onPositionUpdate([
-        groupRef.current.position.x + event.object.position.x,
-        groupRef.current.position.y,
-        groupRef.current.position.z + event.object.position.z
-      ]);
-      event.object.position.x = 0;
-      event.object.position.z = 0;
-    });
-    
-    return () => {
-      controls.dispose();
+      // If ray intersects with object, start dragging
+      const intersects = raycaster.intersectObject(groupRef.current, true);
+      if (intersects.length > 0) {
+        // Prevent orbit controls from interfering
+        if (camera.controls && camera.controls.enabled) {
+          camera.controls.enabled = false;
+        }
+        
+        // Calculate intersection with floor plane
+        raycaster.ray.intersectPlane(floorPlane, intersectionPoint);
+        
+        // Calculate offset so the object doesn't jump to the cursor
+        dragOffset.copy(groupRef.current.position).sub(intersectionPoint);
+        
+        isDragging = true;
+        setIsDragging(true);
+        onSelect(); // Select this item
+        
+        // Prevent default browser behavior
+        event.preventDefault();
+      }
     };
-  }, [camera, draggingEnabled, item.dimensions, item.dimensionSku, item.position, onPositionUpdate, onSelect, roomDimensions.length, roomDimensions.width, modelLoaded]);
+    
+    // Continue dragging
+    const onPointerMove = (event: PointerEvent) => {
+      if (!isDragging || !groupRef.current) return;
+      
+      // Calculate mouse position
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      // Cast ray and find intersection with floor plane
+      raycaster.setFromCamera(mouse, camera);
+      raycaster.ray.intersectPlane(floorPlane, intersectionPoint);
+      
+      // Set new position with offset and fixed Y
+      const newPos = intersectionPoint.add(dragOffset);
+      newPos.y = fixedY; // Keep Y position fixed
+      
+      // Calculate dimensions for boundary checking
+      const unitFactor = getUnitConversionFactor(item.dimensionSku);
+      const halfWidth = (item.dimensions.width * unitFactor) / 2;
+      const halfDepth = (item.dimensions.depth * unitFactor) / 2;
+      
+      // Apply room boundary constraints
+      newPos.x = Math.max(halfWidth, Math.min(roomDimensions.width - halfWidth, newPos.x));
+      newPos.z = Math.max(halfDepth, Math.min(roomDimensions.length - halfDepth, newPos.z));
+      
+      // Update position
+      groupRef.current.position.copy(newPos);
+    };
+    
+    // End dragging
+    const onPointerUp = () => {
+      if (isDragging && groupRef.current) {
+        isDragging = false;
+        setIsDragging(false);
+        
+        // Re-enable orbit controls
+        if (camera.controls) {
+          camera.controls.enabled = true;
+        }
+        
+        // Notify parent component of position update
+        onPositionUpdate([
+          groupRef.current.position.x,
+          groupRef.current.position.y,
+          groupRef.current.position.z
+        ]);
+      }
+    };
+    
+    // Add event listeners
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup', onPointerUp);
+    canvas.addEventListener('pointerleave', onPointerUp);
+    
+    // Clean up
+    return () => {
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      canvas.removeEventListener('pointermove', onPointerMove);
+      canvas.removeEventListener('pointerup', onPointerUp);
+      canvas.removeEventListener('pointerleave', onPointerUp);
+    };
+  }, [camera, draggingEnabled, item.position, item.dimensions, item.dimensionSku, onPositionUpdate, onSelect, roomDimensions.length, roomDimensions.width, modelLoaded]);
   
   // Optimized clone of the 3D model
   const clonedModel = useMemo(() => {

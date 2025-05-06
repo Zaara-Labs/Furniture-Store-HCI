@@ -75,6 +75,8 @@ const RoomCanvas = ({
         {/* Furniture */}
         <Suspense fallback={null}>
           {furniture.map((item: FurnitureItemProps, index: number) => (
+            console.log("Furniture Item:", item),
+            console.log("Index:", index),
             <FurnitureItem
               key={`${item.id}-${index}`}
               item={item}
