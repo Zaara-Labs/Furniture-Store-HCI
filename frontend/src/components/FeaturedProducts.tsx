@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function FeaturedProducts() {
@@ -6,28 +7,28 @@ export default function FeaturedProducts() {
       id: 1,
       name: "Oakwood Armchair",
       price: "599.00",
-      image: "/images/product-1.jpg",
+      image: "/images/landing_featured_products/1.jpg",
       category: "Chairs"
     },
     {
       id: 2,
       name: "Meridian Coffee Table",
       price: "429.00",
-      image: "/images/product-2.jpg",
+      image: "/images/landing_featured_products/2.jpg",
       category: "Tables"
     },
     {
       id: 3,
       name: "Linen Sofa",
       price: "1,299.00",
-      image: "/images/product-3.jpg",
+      image: "/images/landing_featured_products/3.jpg",
       category: "Sofas"
     },
     {
       id: 4,
       name: "Bedside Table",
       price: "249.00",
-      image: "/images/product-4.jpg",
+      image: "/images/landing_featured_products/4.jpg",
       category: "Tables"
     }
   ];
@@ -47,14 +48,13 @@ export default function FeaturedProducts() {
             <Link key={product.id} href={`/product/${product.id}`}>
               <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
                 <div className="aspect-square relative bg-gray-100">
-                  {/* This would be replaced with actual images */}
-                  {/* <Image 
+                  <Image 
                     src={product.image} 
                     alt={product.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                  /> */}
+                  />
                 </div>
                 <div className="p-4">
                   <p className="text-sm text-amber-800 mb-1">{product.category}</p>
