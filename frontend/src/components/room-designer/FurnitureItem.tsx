@@ -2,10 +2,9 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { DragControls } from 'three/examples/jsm/controls/DragControls.js';
-import { useGLTF } from '@react-three/drei';
 import { FurnitureComponentProps } from '@/types/room-designer';
 import { getUnitConversionFactor } from '@/utils/roomUtils';
 import { GLTF } from 'three-stdlib';
@@ -19,104 +18,58 @@ const FurnitureItem = ({
   onPositionUpdate,
   draggingEnabled
 }: FurnitureComponentProps) => {
-  const gltf = useGLTF(item.model, true) as GLTF;
-  const scene = gltf.scene;
+  // State for model loading and errors
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isTextureLoading, setIsTextureLoading] = useState(false);
+  const [textureError, setTextureError] = useState<string | null>(null);
+  const [textureUrl, setTextureUrl] = useState<string | null>(null);
+  const [modelLoaded, setModelLoaded] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  
+  // Refs
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
-  const [isDragging, setIsDragging] = useState(false);
-  const [modelLoaded, setModelLoaded] = useState(false);
   
-  // Load texture if available
+  // Load the model with error handling
+  const { scene, error } = useGLTF(item.model, true) as GLTF & { error?: Error };
+  
+  // Handle loading errors
   useEffect(() => {
+    if (error) {
+      console.error('Error loading model:', error);
+      setLoadError(`Failed to load model: ${error.message}`);
+      setIsLoading(false);
+    }
+  }, [error]);
+  
+  // Handle model loading completion
+  useEffect(() => {
+    if (scene && !modelLoaded) {
+      const checkModelLoaded = () => {
+        // Check if the scene has any children (meshes)
+        if (scene.children.length > 0) {
+          console.log(`Model loaded successfully for ${item.name}`);
+          setIsLoading(false);
+          // Apply settings once the model is fully loaded
+          applyModelSettings();
+        } else {
+          // If no children yet, check again after a short delay
+          setTimeout(checkModelLoaded, 100);
+        }
+      };
+      
+      checkModelLoaded();
+    }
+  }, [scene]);
+  
+  // Function to apply settings to the model once loaded
+  const applyModelSettings = () => {
     if (!scene) return;
     
-    if (item.textureUrl) {
-      const textureLoader = new THREE.TextureLoader();
-      textureLoader.load(item.textureUrl, (texture) => {
-        scene.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.material) {
-            // Apply texture to the material
-            child.material.map = texture;
-            child.material.needsUpdate = true;
-          }
-        });
-      });
-    }
-  }, [scene, item.textureUrl]);
-  
-  // Update position from props - ensures the 3D object matches the React state
-  useEffect(() => {
-    if (groupRef.current && !isDragging) {
-      groupRef.current.position.set(...item.position);
-    }
-  }, [item.position, isDragging]);
-  
-  // Handle dragging - now using consistent position updates
-  useEffect(() => {
-    if (!groupRef.current || !draggingEnabled) return;
+    console.log(`Scaling model for item ${index}:`, item.dimensions);
     
-    const controls = new DragControls([groupRef.current], camera, document.querySelector('canvas'));
-    
-    // Define a basic type for the drag event object if not already defined elsewhere
-    interface DragEvent {
-      type: string;
-      object: THREE.Object3D;
-    }
-
-    controls.addEventListener('dragstart', () => {
-      console.log('Drag started:', groupRef.current?.position);
-      setIsDragging(true);
-      onSelect(); // Select this item when drag starts
-    });
-    
-    controls.addEventListener('drag', (event: DragEvent) => {
-      if (!groupRef.current) return;
-      
-      // Keep Y position (height) constant during drag
-      const y = item.position[1];
-      event.object.position.y = y;
-
-      // Calculate absolute position of the item from the relative coordinates
-      const abs_x = groupRef.current.position.x + event.object.position.x;
-      const abs_z = groupRef.current.position.z + event.object.position.z;
-      
-      // Constrain to room boundaries
-      const halfWidth = item.dimensions.width * getUnitConversionFactor(item.dimensionSku) / 2;
-      const halfDepth = item.dimensions.depth * getUnitConversionFactor(item.dimensionSku) / 2;
-
-      event.object.position.x = Math.max(halfWidth, Math.min(roomDimensions.width - halfWidth, abs_x)) - groupRef.current.position.x;
-      event.object.position.z = Math.max(halfDepth, Math.min(roomDimensions.length - halfDepth, abs_z)) - groupRef.current.position.z;
-    });
-    
-    controls.addEventListener('dragend', (event: DragEvent) => {
-      console.log('Drag ended:', event.object.position);
-      setIsDragging(false);
-      
-      if (!groupRef.current) return;
-      
-      // Use the same update function for both drag and position controls
-      onPositionUpdate([
-        groupRef.current.position.x + event.object.position.x,
-        groupRef.current.position.y,
-        groupRef.current.position.z + event.object.position.z
-      ]);
-      event.object.position.x = 0;
-      event.object.position.z = 0;
-    });
-    
-    return () => {
-      controls.dispose();
-    };
-  }, [camera, draggingEnabled, item.dimensions, item.dimensionSku, item.position, onPositionUpdate, onSelect, roomDimensions.length, roomDimensions.width]);
-  
-  // Apply correct dimensions based on the model and database dimensions
-  useEffect(() => {
-    if (!scene) return;
-    
-    // Ensure we scale the model properly on first load
-    if (!modelLoaded) {
-      console.log(`Scaling model for item ${index}:`, item.dimensions);
-      
+    try {
       // Calculate real-world size in meters based on dimension SKU
       const unitMultiplier = getUnitConversionFactor(item.dimensionSku);
       
@@ -170,25 +123,144 @@ const FurnitureItem = ({
         const newSize = newBox.getSize(new THREE.Vector3());
         console.log(`New model size: ${newSize.x.toFixed(2)} x ${newSize.y.toFixed(2)} x ${newSize.z.toFixed(2)}`);
         
+        // Apply texture if available
+        if (item.textureUrl) {
+          applyTexture(item.textureUrl);
+        }
+        
         setModelLoaded(true);
       } else {
-        console.warn('Model has invalid dimensions. Retrying scaling...');
-        
-        // Try again after a delay to let the model fully load
-        const retryTimer = setTimeout(() => {
-          setModelLoaded(false); // Force another attempt
-        }, 500);
-        
-        return () => clearTimeout(retryTimer);
+        console.warn('Model has invalid dimensions, will retry...');
+        // Try again after a delay
+        setTimeout(() => applyModelSettings(), 500);
       }
+    } catch (err) {
+      console.error('Error applying model settings:', err);
+      setLoadError(`Error configuring model: ${err instanceof Error ? err.message : String(err)}`);
+      setIsLoading(false);
     }
-  }, [scene, item.dimensions, item.dimensionSku, modelLoaded, index]);
+  };
+  
+  // Function to apply texture to the model
+  const applyTexture = (textureUrl: string) => {
+    if (!scene) return;
+
+    setIsTextureLoading(true);
+    setTextureError(null);
+    setTextureUrl(textureUrl);
+    
+    try {
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.load(
+        textureUrl,
+        (texture) => {
+          scene.traverse((child) => {
+            if (child instanceof THREE.Mesh && child.material) {
+              // Apply texture to the material
+              child.material.map = texture;
+              child.material.needsUpdate = true;
+            }
+          });
+          setIsTextureLoading(false);
+          console.log('Texture applied successfully');
+        },
+        undefined,
+        (err) => {
+          setIsTextureLoading(false);
+          setTextureError(`Failed to load texture: ${err instanceof Error ? err.message : String(err)}`);
+          console.error('Error loading texture:', err);
+        }
+      );
+    } catch (err) {
+      console.error('Error applying texture:', err);
+    }
+  };
+  
+  // Update texture when it changes in props
+  useEffect(() => {
+    if (modelLoaded && item.textureUrl) {
+      applyTexture(item.textureUrl);
+    }
+  }, [item.textureUrl, modelLoaded]);
+  
+  // Update position from props - ensures the 3D object matches the React state
+  useEffect(() => {
+    if (groupRef.current && !isDragging) {
+      groupRef.current.position.set(...item.position);
+    }
+  }, [item.position, isDragging]);
+  
+  // Handle dragging - now using consistent position updates
+  useEffect(() => {
+    if (!groupRef.current || !draggingEnabled || !modelLoaded) return;
+    
+    const controls = new DragControls([groupRef.current], camera, document.querySelector('canvas'));
+    
+    // Define a basic type for the drag event object if not already defined elsewhere
+    interface DragEvent {
+      type: string;
+      object: THREE.Object3D;
+    }
+
+    controls.addEventListener('dragstart', () => {
+      console.log('Drag started:', groupRef.current?.position);
+      setIsDragging(true);
+      onSelect(); // Select this item when drag starts
+    });
+    
+    controls.addEventListener('drag', (event: DragEvent) => {
+      if (!groupRef.current) return;
+      
+      // Keep Y position (height) constant during drag
+      const y = item.position[1];
+      event.object.position.y = y;
+
+      // Calculate absolute position of the item from the relative coordinates
+      const abs_x = groupRef.current.position.x + event.object.position.x;
+      const abs_z = groupRef.current.position.z + event.object.position.z;
+      
+      // Constrain to room boundaries
+      const halfWidth = item.dimensions.width * getUnitConversionFactor(item.dimensionSku) / 2;
+      const halfDepth = item.dimensions.depth * getUnitConversionFactor(item.dimensionSku) / 2;
+
+      event.object.position.x = Math.max(halfWidth, Math.min(roomDimensions.width - halfWidth, abs_x)) - groupRef.current.position.x;
+      event.object.position.z = Math.max(halfDepth, Math.min(roomDimensions.length - halfDepth, abs_z)) - groupRef.current.position.z;
+    });
+    
+    controls.addEventListener('dragend', (event: DragEvent) => {
+      console.log('Drag ended:', event.object.position);
+      setIsDragging(false);
+      
+      if (!groupRef.current) return;
+      
+      // Use the same update function for both drag and position controls
+      onPositionUpdate([
+        groupRef.current.position.x + event.object.position.x,
+        groupRef.current.position.y,
+        groupRef.current.position.z + event.object.position.z
+      ]);
+      event.object.position.x = 0;
+      event.object.position.z = 0;
+    });
+    
+    return () => {
+      controls.dispose();
+    };
+  }, [camera, draggingEnabled, item.dimensions, item.dimensionSku, item.position, onPositionUpdate, onSelect, roomDimensions.length, roomDimensions.width, modelLoaded]);
   
   // Optimized clone of the 3D model
   const clonedModel = useMemo(() => {
-    if (!scene) return null;
+    if (!scene || !modelLoaded) return null;
     return scene.clone();
-  }, [scene]);
+  }, [scene, modelLoaded]);
+
+  // Create a placeholder box with the correct dimensions
+  const placeholderBox = useMemo(() => {
+    const width = item.dimensions.width * getUnitConversionFactor(item.dimensionSku);
+    const height = item.dimensions.height * getUnitConversionFactor(item.dimensionSku);
+    const depth = item.dimensions.depth * getUnitConversionFactor(item.dimensionSku);
+    return { width, height, depth };
+  }, [item.dimensions, item.dimensionSku]);
 
   return (
     <group
@@ -201,18 +273,91 @@ const FurnitureItem = ({
         onSelect();
       }}
     >
-      {clonedModel ? <primitive object={clonedModel} /> : (
+      {isLoading ? (
+        // Loading state - display a placeholder box with a loading indicator
+        <>
+          <mesh>
+            <boxGeometry args={[
+              placeholderBox.width, 
+              placeholderBox.height, 
+              placeholderBox.depth
+            ]} />
+            <meshStandardMaterial color="#cccccc" opacity={0.7} transparent />
+          </mesh>
+          <Html center>
+            <div className="bg-white bg-opacity-90 px-3 py-2 rounded-md shadow-md">
+              <div className="flex items-center justify-center">
+                <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-amber-600 rounded-full"></div>
+                <span className="text-xs font-medium text-gray-700">Loading {item.name}...</span>
+              </div>
+            </div>
+          </Html>
+        </>
+      ) : loadError ? (
+        // Error state - display error message and placeholder box
+        <>
+          <mesh>
+            <boxGeometry args={[
+              placeholderBox.width, 
+              placeholderBox.height, 
+              placeholderBox.depth
+            ]} />
+            <meshStandardMaterial color="#ff6b6b" opacity={0.7} transparent />
+          </mesh>
+          <Html center>
+            <div className="bg-white bg-opacity-90 px-3 py-2 rounded-md shadow-md max-w-[200px]">
+              <div className="flex flex-col items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500 mb-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span className="text-xs font-medium text-red-600">Failed to load model</span>
+              </div>
+            </div>
+          </Html>
+        </>
+      ) : clonedModel ? (
+        <>
+          <primitive object={clonedModel} />
+          
+          {/* Texture loading indicator */}
+          {isTextureLoading && isSelected && (
+            <Html center>
+              <div className="bg-white bg-opacity-90 px-3 py-1 rounded-full shadow-sm">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin h-3 w-3 mr-2 border-t-2 border-amber-600 rounded-full"></div>
+                  <span className="text-xs font-medium text-gray-700">Applying texture...</span>
+                </div>
+              </div>
+            </Html>
+          )}
+          
+          {/* Texture error indicator */}
+          {textureError && isSelected && (
+            <Html position={[0, placeholderBox.height + 0.2, 0]}>
+              <div className="bg-red-50 border border-red-200 px-2 py-1 rounded-md shadow-sm">
+                <div className="flex items-center text-red-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-xs">Texture error</span>
+                </div>
+              </div>
+            </Html>
+          )}
+        </>
+      ) : (
+        // Fallback placeholder if no model but no error
         <mesh>
           <boxGeometry args={[
-            item.dimensions.width * getUnitConversionFactor(item.dimensionSku), 
-            item.dimensions.height * getUnitConversionFactor(item.dimensionSku), 
-            item.dimensions.depth * getUnitConversionFactor(item.dimensionSku)
+            placeholderBox.width, 
+            placeholderBox.height, 
+            placeholderBox.depth
           ]} />
           <meshStandardMaterial color={isSelected ? "#f59e0b" : "#cccccc"} />
         </mesh>
       )}
       
-      {/* Selection indicator */}
+      {/* Selection indicator - always show regardless of loading state */}
       {isSelected && (
         <group>
           <Html center>
@@ -222,8 +367,8 @@ const FurnitureItem = ({
           </Html>
           <mesh position={[0, 0.01, 0]} rotation={[-Math.PI/2, 0, 0]}>
             <ringGeometry args={[
-              Math.max(item.dimensions.width, item.dimensions.depth) * getUnitConversionFactor(item.dimensionSku) * 0.5,
-              Math.max(item.dimensions.width, item.dimensions.depth) * getUnitConversionFactor(item.dimensionSku) * 0.55,
+              Math.max(placeholderBox.width, placeholderBox.depth) * 0.5,
+              Math.max(placeholderBox.width, placeholderBox.depth) * 0.55,
               32
             ]} />
             <meshBasicMaterial color="#f59e0b" opacity={0.5} transparent />
