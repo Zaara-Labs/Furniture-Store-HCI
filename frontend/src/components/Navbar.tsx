@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 
 // Define navigation item type
 type NavItem = {
@@ -14,6 +15,7 @@ type NavItem = {
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout, loading, isDesigner } = useAuth();
+  const { cartCount } = useCart();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -155,8 +157,9 @@ export default function Navbar() {
           )}
           
           {/* Only show shopping cart for customers */}
+          {/* Cart Icon with Badge */}
           {(!user || !isDesigner()) && (
-            <button className="text-gray-700 hover:text-amber-800 transition-colors relative">
+            <Link href="/cart" className="text-gray-700 hover:text-amber-800 transition-colors relative">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
@@ -171,10 +174,12 @@ export default function Navbar() {
                   d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
-              <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                0
-              </span>
-            </button>
+              {!isDesigner() && cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
+          </Link>
           )}
         </div>
 
@@ -286,7 +291,7 @@ export default function Navbar() {
                 </svg>
               </button>
               {(!user || !isDesigner()) && (
-                <button className="text-gray-700 hover:text-amber-800 transition-colors relative">
+                <Link href="/cart" className="text-gray-700 hover:text-amber-800 transition-colors relative">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5"
@@ -301,10 +306,12 @@ export default function Navbar() {
                       d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                     />
                   </svg>
-                  <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                    0
-                  </span>
-                </button>
+                  {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                      {cartCount > 99 ? '99+' : cartCount}
+                    </span>
+                  )}
+              </Link>
               )}
             </div>
           </div>
