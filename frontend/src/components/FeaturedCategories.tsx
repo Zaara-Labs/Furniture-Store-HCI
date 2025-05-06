@@ -1,26 +1,26 @@
-// import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function FeaturedCategories() {
   const categories = [
     {
       name: "Living Room",
-      image: "/images/living-room.jpg",
+      image: "/images/landing_collection/living.jpg",
       link: "/collections/living-room"
     },
     {
       name: "Bedroom",
-      image: "/images/bedroom.jpg",
+      image: "/images/landing_collection/bed.jpg",
       link: "/collections/bedroom"
     },
     {
       name: "Dining",
-      image: "/images/dining.jpg",
+      image: "/images/landing_collection/dining.jpg",
       link: "/collections/dining"
     },
     {
       name: "Office",
-      image: "/images/office.jpg",
+      image: "/images/landing_collection/office.jpg",
       link: "/collections/office"
     }
   ];
@@ -39,16 +39,13 @@ export default function FeaturedCategories() {
           {categories.map((category, index) => (
             <div key={index} className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow">
               <div className="aspect-[3/4] relative">
-                {/* Replace with actual optimized images */}
-                <div className="w-full h-full bg-gray-200"></div>
-                {/* This would be replaced with actual images */}
-                {/* <Image 
+                <Image 
                   src={category.image} 
                   alt={category.name} 
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                /> */}
+                />
               </div>
               
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
@@ -56,7 +53,7 @@ export default function FeaturedCategories() {
                   <h3 className="text-xl text-white font-medium mb-2">{category.name}</h3>
                   <Link 
                     href={category.link}
-                    className="inline-block text-white font-medium group-hover:underline"
+                    className="inline-block text-white font-medium transition-all duration-300 hover:text-amber-300 hover:translate-x-1"
                   >
                     View Collection
                   </Link>
