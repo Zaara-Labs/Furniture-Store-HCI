@@ -61,7 +61,7 @@ export function useRoomDesigner() {
     const dimensionSku = product.dim_sku || 'cm';
 
     // Convert dimensions for placement calculations (if needed)
-    const unitFactor = getUnitConversionFactor(dimensionSku);
+    // const unitFactor = getUnitConversionFactor(dimensionSku);
 
     // Calculate initial position - center of room with small offset
     // This keeps Y at 0 to maintain objects on the floor

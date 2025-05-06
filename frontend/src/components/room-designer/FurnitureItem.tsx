@@ -253,10 +253,12 @@ const FurnitureItem = ({
       
       instanceMaterials.current.forEach(material => {
         if (material) {
-          // Apply texture and update material
-          material.map = texture;
-          material.needsUpdate = true;
-          materialsUpdated++;
+          // Check if material is of a type that supports textures
+          if (material instanceof THREE.MeshStandardMaterial) {
+            material.map = texture;
+            material.needsUpdate = true;
+            materialsUpdated++;
+          }
         }
       });
       
@@ -298,7 +300,7 @@ const FurnitureItem = ({
     
     // Track drag state
     let isDragging = false;
-    let dragOffset = new THREE.Vector3();
+    const dragOffset = new THREE.Vector3();
     
     // Get canvas for event handling
     const canvas = document.querySelector('canvas');
@@ -320,8 +322,8 @@ const FurnitureItem = ({
       const intersects = raycaster.intersectObject(groupRef.current, true);
       if (intersects.length > 0) {
         // Prevent orbit controls from interfering
-        if (camera.controls && camera.controls.enabled) {
-          camera.controls.enabled = false;
+        if ('controls' in camera && camera.controls) {
+          (camera.controls as { enabled: boolean }).enabled = false;
         }
         
         // Calculate intersection with floor plane
@@ -376,8 +378,8 @@ const FurnitureItem = ({
         setIsDragging(false);
         
         // Re-enable orbit controls
-        if (camera.controls) {
-          camera.controls.enabled = true;
+        if ('controls' in camera && camera.controls) {
+          (camera.controls as { enabled: boolean }).enabled = true;
         }
         
         // Notify parent component of position update

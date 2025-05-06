@@ -1,4 +1,3 @@
-import { Product } from './collections/Product';
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 

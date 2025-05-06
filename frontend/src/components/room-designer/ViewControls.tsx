@@ -1,6 +1,6 @@
 "use client";
 
-import { CameraRefs, ViewType, RoomSettings } from '@/types/room-designer';
+import { CameraRefs, RoomSettings } from '@/types/room-designer';
 
 interface ViewControlsProps extends CameraRefs {
   room: RoomSettings;
