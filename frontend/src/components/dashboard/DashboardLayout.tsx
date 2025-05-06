@@ -18,7 +18,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigationItems = [
     { name: 'Overview', href: '/dashboard', icon: 'chart-pie' },
     { name: 'Products', href: '/dashboard/products', icon: 'shopping-bag' },
-    { name: 'Room Designs', href: '/dashboard/designs', icon: 'template' },
+    { name: 'Design Projects', href: '/dashboard/designs', icon: 'template' },
     { name: 'Customer Requests', href: '/dashboard/requests', icon: 'chat' },
     { name: 'Settings', href: '/dashboard/settings', icon: 'cog' },
   ];
