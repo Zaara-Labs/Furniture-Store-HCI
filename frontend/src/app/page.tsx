@@ -27,12 +27,12 @@ export default function Home() {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-grow px-4 py-3 rounded-md text-gray-800 focus:outline-none"
+                className="flex-grow px-4 py-3 rounded-md text-gray-800 bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
                 required
               />
               <button
                 type="submit"
-                className="px-6 py-3 bg-white text-amber-800 font-medium rounded-md hover:bg-gray-100 transition-colors"
+                className="px-6 py-3 bg-white text-amber-800 font-medium rounded-md hover:bg-slate-100 hover:text-black transition-colors"
               >
                 Subscribe
               </button>
