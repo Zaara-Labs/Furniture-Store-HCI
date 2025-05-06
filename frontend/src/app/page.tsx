@@ -5,6 +5,7 @@ import FeaturedCategories from "@/components/FeaturedCategories";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import TestimonialSection from "@/components/TestimonialSection";
 import Footer from "@/components/Footer";
+import Image from "next/image";
 
 export default function Home() {
   return (
@@ -47,14 +48,13 @@ export default function Home() {
           <div className="container mx-auto px-6">
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="flex flex-col md:flex-row">
-                <div className="md:w-1/2 bg-gray-200 min-h-[300px]">
-                  {/* This would be replaced with an actual image */}
-                  {/* <Image 
-                    src="/images/interior-design.jpg" 
+                <div className="md:w-1/2 bg-gray-200 min-h-[300px] relative">
+                  <Image 
+                    src="/images/landing/interior.jpg" 
                     alt="Interior Design Service" 
                     fill
                     className="object-cover"
-                  /> */}
+                  />
                 </div>
                 <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
                   <h2 className="text-3xl font-serif font-medium mb-4">Interior Design Service</h2>
