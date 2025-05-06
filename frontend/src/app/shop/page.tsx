@@ -147,8 +147,7 @@ function ShopContent() {
     
     router.push(`/shop?${params.toString()}`);
   };
-
-  console.log(products);
+  
   return (
     <div className="container mx-auto">
       <h1 className="text-3xl font-serif font-medium mb-8">Shop Our Collection</h1>

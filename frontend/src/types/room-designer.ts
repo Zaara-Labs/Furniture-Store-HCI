@@ -12,6 +12,7 @@ export interface RoomSettings {
 
 export interface FurnitureItemProps {
   id: string;
+  instanceId: string; // Unique ID for each instance of a furniture item
   name: string;
   model: string;
   position: [number, number, number];

@@ -8,6 +8,12 @@ import { FurnitureComponentProps } from '@/types/room-designer';
 import { getUnitConversionFactor } from '@/utils/roomUtils';
 import { GLTF } from 'three-stdlib';
 
+// Cache for storing model clones by instanceId
+const modelInstanceCache = new Map<string, THREE.Group>();
+
+// Cache for storing textures by URL
+const textureCache = new Map<string, THREE.Texture>();
+
 const FurnitureItem = ({
   item,
   index,
@@ -22,53 +28,135 @@ const FurnitureItem = ({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isTextureLoading, setIsTextureLoading] = useState(false);
   const [textureError, setTextureError] = useState<string | null>(null);
-  const [textureUrl, setTextureUrl] = useState<string | null>(null);
   const [modelLoaded, setModelLoaded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   
   // Refs
   const groupRef = useRef<THREE.Group>(null);
+  const modelRef = useRef<THREE.Group | null>(null);
   const { camera } = useThree();
+
+  // Store instanceId and index for validation
+  const instanceId = useMemo(() => item.instanceId || `instance-${index}`, [item.instanceId, index]);
   
-  // Load the model with error handling
-  const { scene, error } = useGLTF(item.model, true) as GLTF & { error?: Error };
+  // Using instance-specific refs to track our model and its materials
+  const instanceMaterials = useRef<THREE.Material[]>([]);
+  
+  // Load the model with error handling - this is the base model that we'll clone
+  const { scene: baseScene, error } = useGLTF(item.model, true) as GLTF & { error?: Error };
   
   // Handle loading errors
   useEffect(() => {
     if (error) {
-      console.error('Error loading model:', error);
+      console.error(`Error loading model for instance ${instanceId}:`, error);
       setLoadError(`Failed to load model: ${error.message}`);
       setIsLoading(false);
     }
-  }, [error]);
-  
-  // Handle model loading completion
-  useEffect(() => {
-    if (scene && !modelLoaded) {
-      const checkModelLoaded = () => {
-        // Check if the scene has any children (meshes)
-        if (scene.children.length > 0) {
-          console.log(`Model loaded successfully for ${item.name}`);
-          setIsLoading(false);
-          // Apply settings once the model is fully loaded
-          applyModelSettings();
-        } else {
-          // If no children yet, check again after a short delay
-          setTimeout(checkModelLoaded, 100);
-        }
-      };
-      
-      checkModelLoaded();
-    }
-  }, [scene]);
-  
-  // Function to apply settings to the model once loaded
-  const applyModelSettings = () => {
-    if (!scene) return;
+  }, [error, instanceId]);
+
+  // Deep clone a model and its materials, ensuring complete independence
+  const createIndependentModelCopy = (originalScene: THREE.Group): THREE.Group => {
+    console.log(`Creating independent model for instance ${instanceId} (index: ${index})`);
     
-    console.log(`Scaling model for item ${index}:`, item.dimensions);
+    // Create a deep clone of the scene
+    const clonedScene = originalScene.clone(true);
+    
+    // Reset material references for this instance
+    instanceMaterials.current = [];
+    
+    // Process all materials in the cloned scene to ensure uniqueness
+    clonedScene.traverse((node) => {
+      if (node instanceof THREE.Mesh) {
+        // Handle array of materials
+        if (Array.isArray(node.material)) {
+          node.material = node.material.map((mat) => {
+            // Create a completely new material instance
+            const newMat = new THREE.MeshStandardMaterial().copy(mat);
+            
+            // Store reference to our new material
+            instanceMaterials.current.push(newMat);
+            
+            // Add metadata to help with debugging
+            newMat.userData = { 
+              instanceId, 
+              furnitureIndex: index,
+              originalMaterialUuid: mat.uuid
+            };
+            
+            return newMat;
+          });
+        } 
+        // Handle single material
+        else if (node.material) {
+          // Create a completely new material instance
+          const newMat = new THREE.MeshStandardMaterial().copy(node.material);
+          
+          // Store reference to our new material
+          instanceMaterials.current.push(newMat);
+          
+          // Add metadata to help with debugging
+          newMat.userData = { 
+            instanceId, 
+            furnitureIndex: index,
+            originalMaterialUuid: node.material.uuid
+          };
+          
+          node.material = newMat;
+        }
+      }
+    });
+    
+    console.log(`Created independent model with ${instanceMaterials.current.length} unique materials`);
+    return clonedScene;
+  };
+  
+  // Create/retrieve model for this instance
+  useEffect(() => {
+    if (!baseScene || modelLoaded) return;
+    
+    const initializeModel = () => {
+      try {
+        // Check if we have loaded meshes
+        if (baseScene.children.length > 0) {
+          console.log(`Initializing model for ${item.name} (instance: ${instanceId}, index: ${index})`);
+          
+          // Create an independent copy with unique materials
+          const independentModel = createIndependentModelCopy(baseScene);
+          
+          // Store in our instance-specific ref
+          modelRef.current = independentModel;
+          
+          // Cache the model by instanceId for potential reuse
+          modelInstanceCache.set(instanceId, independentModel);
+          
+          // Now apply scaling and other settings
+          applyModelSettings();
+          
+          setIsLoading(false);
+          setModelLoaded(true);
+        } else {
+          // No meshes yet, try again shortly
+          setTimeout(initializeModel, 100);
+        }
+      } catch (err) {
+        console.error(`Error initializing model for instance ${instanceId}:`, err);
+        setLoadError(`Error preparing model: ${err instanceof Error ? err.message : String(err)}`);
+        setIsLoading(false);
+      }
+    };
+    
+    initializeModel();
+  }, [baseScene, instanceId, index, item.name, modelLoaded]);
+  
+  // Apply scaling and other settings to the model
+  const applyModelSettings = () => {
+    if (!modelRef.current) return;
     
     try {
+      const model = modelRef.current;
+      
+      console.log(`Scaling model for instance ${instanceId} (index: ${index})`);
+      
       // Calculate real-world size in meters based on dimension SKU
       const unitMultiplier = getUnitConversionFactor(item.dimensionSku);
       
@@ -76,102 +164,108 @@ const FurnitureItem = ({
       const targetHeight = item.dimensions.height * unitMultiplier;
       const targetDepth = item.dimensions.depth * unitMultiplier;
       
-      console.log(`Target dimensions (m): ${targetWidth} x ${targetHeight} x ${targetDepth}`);
+      // Reset scale and update matrix
+      model.scale.set(1, 1, 1);
+      model.updateMatrixWorld(true);
       
-      // Reset any previous scaling and update world matrix
-      scene.scale.set(1, 1, 1);
-      scene.updateMatrixWorld(true);
-      
-      // Get the actual size of the model
-      const box = new THREE.Box3().setFromObject(scene);
+      // Calculate bounding box for scaling
+      const box = new THREE.Box3().setFromObject(model);
       const modelSize = box.getSize(new THREE.Vector3());
       
-      console.log(`Original model size: ${modelSize.x} x ${modelSize.y} x ${modelSize.z}`);
-      
       if (modelSize.x > 0 && modelSize.y > 0 && modelSize.z > 0) {
-        // Calculate scale factors for each dimension
+        // Calculate scale factors
         const scaleX = targetWidth / modelSize.x;
         const scaleY = targetHeight / modelSize.y;
         const scaleZ = targetDepth / modelSize.z;
         
-        // Apply uniform scaling if the model has unusual proportions
+        // Determine if we need uniform scaling for disproportionate models
         let finalScaleX = scaleX;
         let finalScaleY = scaleY;
         let finalScaleZ = scaleZ;
         
-        // Check if dimensions are very different - might indicate model orientation issues
         const maxScale = Math.max(scaleX, scaleY, scaleZ);
         const minScale = Math.min(scaleX, scaleY, scaleZ);
         
         if (maxScale / minScale > 5) {
-          // If scales are very different, use the median scale as a uniform scale factor
+          // Use median for uniform scaling if dimensions are very different
           const scales = [scaleX, scaleY, scaleZ].sort((a, b) => a - b);
           const uniformScale = scales[1]; // Median value
           finalScaleX = finalScaleY = finalScaleZ = uniformScale;
-          console.log(`Applied uniform scaling factor: ${uniformScale} due to disproportionate dimensions`);
-        } else {
-          console.log(`Applied scale factors: ${finalScaleX}, ${finalScaleY}, ${finalScaleZ}`);
         }
         
         // Apply scaling
-        scene.scale.set(finalScaleX, finalScaleY, finalScaleZ);
-        scene.updateMatrixWorld(true);
+        model.scale.set(finalScaleX, finalScaleY, finalScaleZ);
+        model.updateMatrixWorld(true);
         
-        // Verify final size
-        const newBox = new THREE.Box3().setFromObject(scene);
-        const newSize = newBox.getSize(new THREE.Vector3());
-        console.log(`New model size: ${newSize.x.toFixed(2)} x ${newSize.y.toFixed(2)} x ${newSize.z.toFixed(2)}`);
-        
-        // Apply texture if available
+        // Apply initial texture if one is specified
         if (item.textureUrl) {
           applyTexture(item.textureUrl);
         }
-        
-        setModelLoaded(true);
-      } else {
-        console.warn('Model has invalid dimensions, will retry...');
-        // Try again after a delay
-        setTimeout(() => applyModelSettings(), 500);
       }
     } catch (err) {
-      console.error('Error applying model settings:', err);
+      console.error(`Error scaling model for instance ${instanceId}:`, err);
       setLoadError(`Error configuring model: ${err instanceof Error ? err.message : String(err)}`);
-      setIsLoading(false);
     }
   };
   
-  // Function to apply texture to the model
-  const applyTexture = (textureUrl: string) => {
-    if (!scene) return;
-
-    setIsTextureLoading(true);
-    setTextureError(null);
-    setTextureUrl(textureUrl);
-    
-    try {
-      const textureLoader = new THREE.TextureLoader();
-      textureLoader.load(
-        textureUrl,
+  // Function to load and cache a texture
+  const loadTexture = (url: string): Promise<THREE.Texture> => {
+    return new Promise((resolve, reject) => {
+      // Check cache first
+      if (textureCache.has(url)) {
+        resolve(textureCache.get(url)!);
+        return;
+      }
+      
+      // Load new texture
+      const loader = new THREE.TextureLoader();
+      loader.load(
+        url,
         (texture) => {
-          scene.traverse((child) => {
-            if (child instanceof THREE.Mesh && child.material) {
-              // Apply texture to the material
-              child.material.map = texture;
-              child.material.needsUpdate = true;
-            }
-          });
-          setIsTextureLoading(false);
-          console.log('Texture applied successfully');
+          // Cache the texture
+          textureCache.set(url, texture);
+          resolve(texture);
         },
         undefined,
-        (err) => {
-          setIsTextureLoading(false);
-          setTextureError(`Failed to load texture: ${err instanceof Error ? err.message : String(err)}`);
-          console.error('Error loading texture:', err);
+        (error) => {
+          reject(error);
         }
       );
+    });
+  };
+  
+  // Apply texture to this specific instance only
+  const applyTexture = async (textureUrl: string) => {
+    if (!modelRef.current || instanceMaterials.current.length === 0) {
+      console.warn(`Cannot apply texture to instance ${instanceId}: Model not ready`);
+      return;
+    }
+    
+    setIsTextureLoading(true);
+    setTextureError(null);
+    
+    try {
+      // Load or retrieve cached texture
+      const texture = await loadTexture(textureUrl);
+      
+      // Apply to all materials for this instance (which we tracked in instanceMaterials)
+      let materialsUpdated = 0;
+      
+      instanceMaterials.current.forEach(material => {
+        if (material) {
+          // Apply texture and update material
+          material.map = texture;
+          material.needsUpdate = true;
+          materialsUpdated++;
+        }
+      });
+      
+      setIsTextureLoading(false);
+      console.log(`Texture applied to instance ${instanceId} (index: ${index}), updated ${materialsUpdated} materials`);
     } catch (err) {
-      console.error('Error applying texture:', err);
+      setIsTextureLoading(false);
+      setTextureError(`Failed to load texture: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(`Error applying texture to instance ${instanceId}:`, err);
     }
   };
   
@@ -182,7 +276,7 @@ const FurnitureItem = ({
     }
   }, [item.textureUrl, modelLoaded]);
   
-  // Update position from props - ensures the 3D object matches the React state
+  // Update position from props
   useEffect(() => {
     if (groupRef.current && !isDragging) {
       groupRef.current.position.set(...item.position);
@@ -309,12 +403,6 @@ const FurnitureItem = ({
       canvas.removeEventListener('pointerleave', onPointerUp);
     };
   }, [camera, draggingEnabled, item.position, item.dimensions, item.dimensionSku, onPositionUpdate, onSelect, roomDimensions.length, roomDimensions.width, modelLoaded]);
-  
-  // Optimized clone of the 3D model
-  const clonedModel = useMemo(() => {
-    if (!scene || !modelLoaded) return null;
-    return scene.clone();
-  }, [scene, modelLoaded]);
 
   // Create a placeholder box with the correct dimensions
   const placeholderBox = useMemo(() => {
@@ -377,9 +465,9 @@ const FurnitureItem = ({
             </div>
           </Html>
         </>
-      ) : clonedModel ? (
+      ) : modelRef.current ? (
         <>
-          <primitive object={clonedModel} />
+          <primitive object={modelRef.current} />
           
           {/* Texture loading indicator */}
           {isTextureLoading && isSelected && (
@@ -406,6 +494,15 @@ const FurnitureItem = ({
               </div>
             </Html>
           )}
+          
+          {/* Debug info - instance ID indicator (uncomment for debugging) */}
+          {/* {isSelected && (
+            <Html position={[0, placeholderBox.height + 0.3, 0]}>
+              <div className="bg-blue-50 border border-blue-200 px-2 py-1 rounded-md shadow-sm text-xs">
+                ID: {instanceId.substring(0, 8)}
+              </div>
+            </Html>
+          )} */}
         </>
       ) : (
         // Fallback placeholder if no model but no error

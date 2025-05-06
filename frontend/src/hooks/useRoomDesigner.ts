@@ -5,7 +5,14 @@ import { productService } from '@/services/appwrite';
 import { RoomSettings, FurnitureItemProps } from '@/types/room-designer';
 import { Product } from '@/types/collections/Product';
 import { getUnitConversionFactor } from '@/utils/roomUtils';
-import { randomBytes } from 'crypto';
+
+// Helper to generate UUID
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 export function useRoomDesigner() {
   // Room state
@@ -64,9 +71,10 @@ export function useRoomDesigner() {
       room.length / 2 + (Math.random() * 1 - 0.5)
     ];
 
-    // Create new furniture item
+    // Create new furniture item with a unique instanceId
     const newFurniture: FurnitureItemProps = {
       id: (product.$id as string),
+      instanceId: generateUUID(), // Add unique instance ID
       name: product.name,
       model: product.model_3d_url,
       position: initialPosition,
