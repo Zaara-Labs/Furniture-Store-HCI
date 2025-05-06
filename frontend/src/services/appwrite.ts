@@ -51,16 +51,20 @@ const storeAnonSessionId = (sessionId: string): void => {
 // Authentication functions
 export const appwriteService = {
   // Create a new account
-  createAccount: async (email: string, password: string, name: string) => {
+  createAccount: async (email: string, password: string, name: string, role: 'customer' | 'designer' = 'customer') => {
     try {
+      const userId = ID.unique();
       const newAccount = await account.create(
-        ID.unique(),
+        userId,
         email,
         password,
         name
       );
 
       if (newAccount) {
+        // Add role as a label to the user account instead of creating a separate document
+        await account.updateLabels(userId, [role]);
+
         // Login immediately after successful signup
         return await appwriteService.login(email, password);
       } else {
@@ -94,7 +98,19 @@ export const appwriteService = {
   // Get current user
   getCurrentUser: async () => {
     try {
-      return await account.get();
+      const currentAccount = await account.get();
+
+      if (!currentAccount) return null;
+
+      // Determine user role from the labels
+      // If user has 'designer' label, use that role, otherwise default to 'customer'
+      const role = currentAccount.labels?.includes('designer') ? 'designer' : 'customer';
+
+      // Return user with role information
+      return {
+        ...currentAccount,
+        role
+      };
     } catch (error) {
       // Check specifically for the "missing scope" error for guests
       if (error instanceof AppwriteException &&
@@ -126,42 +142,6 @@ export const appwriteService = {
       return ID.unique(); // Fallback to a new ID
     }
   },
-
-  // Merge anonymous data with logged-in user data
-  // mergeAnonymousDataWithUser: async (anonymousId: string) => {
-  //   try {
-
-  //     // Get anonymous cart items
-  //     const anonCart = await databases.listDocuments(
-  //       DATABASE_ID,
-  //       'cart',
-  //       [
-  //         // Query where userOrSessionId equals anonymousId
-  //         // Replace with your actual field names
-  //         // Query.equal('userOrSessionId', anonymousId)
-  //       ]
-  //     );
-
-  //     // Get user ID after login
-  //     const currentUser = await appwriteService.getCurrentUser();
-  //     if (!currentUser) return;
-
-  //     for (const item of anonCart.documents) {
-  //       await databases.updateDocument(
-  //         DATABASE_ID,
-  //         'cart',
-  //         item.$id,
-  //         {
-  //           userOrSessionId: currentUser.$id
-  //         }
-  //       );
-  //     }
-
-  //     console.log('Anonymous session merged with user account');
-  //   } catch (error) {
-  //     console.error("Appwrite service :: mergeAnonymousDataWithUser :: error", error);
-  //   }
-  // },
 
   // Logout
   logout: async () => {

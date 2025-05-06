@@ -2,19 +2,53 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+
+// Define navigation item type
+type NavItem = {
+  name: string;
+  href: string;
+};
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading, isDesigner } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Navigation items for regular customers
+  const customerNavItems: NavItem[] = [
+    { name: "Home", href: "/" },
+    { name: "Shop", href: "/shop" },
+    { name: "Collections", href: "/collections" },
+    { name: "Room Designer", href: "/room-designer" },
+    { name: "About", href: "/about" },
+    { name: "Contact", href: "/contact" }
+  ];
+
+  // Navigation items for designers
+  const designerNavItems: NavItem[] = [
+    { name: "Home", href: "/" },
+    { name: "Dashboard", href: "/dashboard" },
+    { name: "Products", href: "/dashboard/products" },
+    { name: "Design Projects", href: "/dashboard/designs" },
+    { name: "Customer Requests", href: "/dashboard/requests" }
+  ];
+
+  // Select navigation items based on user role
+  const navItems = isDesigner() ? designerNavItems : customerNavItems;
 
   const handleLogout = async () => {
     try {
       await logout();
+      router.push('/');
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
+
+  const isActive = (href: string) => pathname === href;
 
   return (
     <nav className="bg-white py-4 px-6 shadow-sm fixed w-full z-50">
@@ -27,41 +61,20 @@ export default function Navbar() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex space-x-8">
-          <Link
-            href="/"
-            className="text-gray-700 hover:text-amber-800 relative group transition-colors"
-          >
-            Home
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
-          </Link>
-          <Link
-            href="/shop"
-            className="text-gray-700 hover:text-amber-800 relative group transition-colors"
-          >
-            Shop
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
-          </Link>
-          <Link
-            href="/collections"
-            className="text-gray-700 hover:text-amber-800 relative group transition-colors"
-          >
-            Collections
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
-          </Link>
-          <Link
-            href="/about"
-            className="text-gray-700 hover:text-amber-800 relative group transition-colors"
-          >
-            About
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
-          </Link>
-          <Link
-            href="/contact"
-            className="text-gray-700 hover:text-amber-800 relative group transition-colors"
-          >
-            Contact
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
-          </Link>
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`text-gray-700 hover:text-amber-800 relative group transition-colors ${
+                isActive(item.href) ? "text-amber-800 font-medium" : ""
+              }`}
+            >
+              {item.name}
+              <span className={`absolute -bottom-1 left-0 h-0.5 bg-amber-800 transition-all duration-300 ${
+                isActive(item.href) ? "w-full" : "w-0 group-hover:w-full"
+              }`}></span>
+            </Link>
+          ))}
         </div>
 
         <div className="hidden md:flex items-center space-x-6">
@@ -107,12 +120,22 @@ export default function Navbar() {
                   <Link href="/account" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     My Account
                   </Link>
-                  <Link href="/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Orders
-                  </Link>
-                  <Link href="/wishlist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Wishlist
-                  </Link>
+                  {/* Only show Orders link for customers */}
+                  {!isDesigner() && (
+                    <Link href="/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      Orders
+                    </Link>
+                  )}
+                  {!isDesigner() && (
+                    <Link href="/wishlist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      Wishlist
+                    </Link>
+                  )}
+                  {isDesigner() && (
+                    <Link href="/dashboard" className="block px-4 py-2 text-sm text-amber-800 font-medium hover:bg-gray-100">
+                      Designer Dashboard
+                    </Link>
+                  )}
                   <button 
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -131,25 +154,28 @@ export default function Navbar() {
             )
           )}
           
-          <button className="text-gray-700 hover:text-amber-800 transition-colors relative">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-              0
-            </span>
-          </button>
+          {/* Only show shopping cart for customers */}
+          {(!user || !isDesigner()) && (
+            <button className="text-gray-700 hover:text-amber-800 transition-colors relative">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                0
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Mobile menu button */}
@@ -178,41 +204,22 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden py-4 bg-white absolute left-0 right-0 shadow-md">
           <div className="flex flex-col space-y-3 px-6">
-            <Link
-              href="/"
-              className="text-gray-700 hover:text-amber-800 relative group transition-colors py-1"
-            >
-              Home
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link
-              href="/shop"
-              className="text-gray-700 hover:text-amber-800 relative group transition-colors py-1"
-            >
-              Shop
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link
-              href="/collections"
-              className="text-gray-700 hover:text-amber-800 relative group transition-colors py-1"
-            >
-              Collections
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link
-              href="/about"
-              className="text-gray-700 hover:text-amber-800 relative group transition-colors py-1"
-            >
-              About
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link
-              href="/contact"
-              className="text-gray-700 hover:text-amber-800 relative group transition-colors py-1"
-            >
-              Contact
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
-            </Link>
+            {/* Render role-specific navigation items for mobile */}
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`text-gray-700 hover:text-amber-800 relative group transition-colors py-1 ${
+                  isActive(item.href) ? "text-amber-800 font-medium" : ""
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {item.name}
+                <span className={`absolute -bottom-1 left-0 h-0.5 bg-amber-800 transition-all duration-300 ${
+                  isActive(item.href) ? "w-full" : "w-0 group-hover:w-full"
+                }`}></span>
+              </Link>
+            ))}
             
             {/* Auth links for mobile */}
             {!loading && (
@@ -220,6 +227,7 @@ export default function Navbar() {
                 <Link
                   href="/auth/login"
                   className="text-gray-700 hover:text-amber-800 relative group transition-colors py-1"
+                  onClick={() => setIsMenuOpen(false)}
                 >
                   Sign in
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
@@ -229,12 +237,28 @@ export default function Navbar() {
                   <Link
                     href="/account"
                     className="text-gray-700 hover:text-amber-800 relative group transition-colors py-1"
+                    onClick={() => setIsMenuOpen(false)}
                   >
                     My Account
                     <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
                   </Link>
+                  
+                  {isDesigner() && (
+                    <Link
+                      href="/dashboard"
+                      className="text-amber-800 font-medium hover:text-amber-900 relative group transition-colors py-1"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Designer Dashboard
+                      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-800 group-hover:w-full transition-all duration-300"></span>
+                    </Link>
+                  )}
+                  
                   <button
-                    onClick={handleLogout}
+                    onClick={() => {
+                      handleLogout();
+                      setIsMenuOpen(false);
+                    }}
                     className="text-left text-gray-700 hover:text-amber-800 relative group transition-colors py-1"
                   >
                     Sign out
@@ -261,25 +285,27 @@ export default function Navbar() {
                   />
                 </svg>
               </button>
-              <button className="text-gray-700 hover:text-amber-800 transition-colors relative">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
-                <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                  0
-                </span>
-              </button>
+              {(!user || !isDesigner()) && (
+                <button className="text-gray-700 hover:text-amber-800 transition-colors relative">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                  <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                    0
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>
