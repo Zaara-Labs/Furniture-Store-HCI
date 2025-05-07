@@ -2,10 +2,13 @@
 
 import React from "react";
 import Image from "next/image";
-//import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
+
+// Create a ClientSide wrapper for motion components
+const MotionDiv = motion.div;
+const MotionA = motion.a;
 
 export default function ContactPage() {
   return (
@@ -24,38 +27,38 @@ export default function ContactPage() {
               priority
             />
           </div>
-          <motion.div 
+          <MotionDiv 
             className="absolute inset-0 flex items-center justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
           >
             <div className="text-center mx-auto px-6">
-              <motion.h1 
+              <MotionDiv 
                 className="text-4xl md:text-5xl font-serif font-medium text-white mb-4"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
               >
                 Contact Us
-              </motion.h1>
-              <motion.p 
+              </MotionDiv>
+              <MotionDiv 
                 className="text-xl text-white max-w-2xl"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.5 }}
               >
                 We&apos;d love to hear from you
-              </motion.p>
-              <motion.div
+              </MotionDiv>
+              <MotionDiv
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.9 }}
                 className="mt-8"
               >
-              </motion.div>
+              </MotionDiv>
             </div>
-          </motion.div>
+          </MotionDiv>
         </section>
         
         {/* Contact Form Section */}
@@ -142,14 +145,14 @@ export default function ContactPage() {
               </div>
               
               {/* Contact Information */}
-              <motion.div 
+              <MotionDiv 
                 className="lg:w-1/3 bg-gray-100 p-8 rounded-lg self-start"
                 initial={{ opacity: 0, x: 40 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ duration: 0.7 }}
               >
-                <motion.h3 
+                <MotionDiv 
                   className="text-xl font-medium mb-6"
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
@@ -157,10 +160,10 @@ export default function ContactPage() {
                   transition={{ duration: 0.5 }}
                 >
                   Contact Information
-                </motion.h3>
+                </MotionDiv>
                 
                 <div className="space-y-6">
-                  <motion.div 
+                  <MotionDiv 
                     className="flex items-start"
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -181,9 +184,9 @@ export default function ContactPage() {
                         Colombo, SL 10001.
                       </p>
                     </div>
-                  </motion.div>
+                  </MotionDiv>
                   
-                  <motion.div 
+                  <MotionDiv 
                     className="flex items-start"
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -201,9 +204,9 @@ export default function ContactPage() {
                       <p className="text-sm text-gray-500 mt-1">Mon-Fri: 9am - 6pm</p>
                       <p className="text-sm text-gray-500">Sat: 10am - 4pm</p>
                     </div>
-                  </motion.div>
+                  </MotionDiv>
                   
-                  <motion.div 
+                  <MotionDiv 
                     className="flex items-start"
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -220,10 +223,10 @@ export default function ContactPage() {
                       <p className="text-gray-600">info@fabrique.com</p>
                       <p className="text-sm text-gray-500 mt-1">We&apos;ll respond within 24 hours</p>
                     </div>
-                  </motion.div>
+                  </MotionDiv>
                 </div>
                 
-                <motion.div 
+                <MotionDiv 
                   className="mt-8"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -232,7 +235,7 @@ export default function ContactPage() {
                 >
                   <h3 className="text-xl font-medium mb-4">Follow Us</h3>
                   <div className="flex space-x-4">
-                    <motion.a 
+                    <MotionA 
                       href="#" 
                       className="bg-amber-800 text-white p-2 rounded-full hover:bg-amber-900 transition-colors"
                       whileHover={{ scale: 1.2, rotate: 10 }}
@@ -241,8 +244,8 @@ export default function ContactPage() {
                       <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                       </svg>
-                    </motion.a>
-                    <motion.a 
+                    </MotionA>
+                    <MotionA 
                       href="#" 
                       className="bg-amber-800 text-white p-2 rounded-full hover:bg-amber-900 transition-colors"
                       whileHover={{ scale: 1.2, rotate: 10 }}
@@ -251,8 +254,8 @@ export default function ContactPage() {
                       <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
                       </svg>
-                    </motion.a>
-                    <motion.a 
+                    </MotionA>
+                    <MotionA 
                       href="#" 
                       className="bg-amber-800 text-white p-2 rounded-full hover:bg-amber-900 transition-colors"
                       whileHover={{ scale: 1.2, rotate: 10 }}
@@ -261,8 +264,8 @@ export default function ContactPage() {
                       <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
                       </svg>
-                    </motion.a>
-                    <motion.a 
+                    </MotionA>
+                    <MotionA 
                       href="#" 
                       className="bg-amber-800 text-white p-2 rounded-full hover:bg-amber-900 transition-colors"
                       whileHover={{ scale: 1.2, rotate: 10 }}
@@ -271,10 +274,10 @@ export default function ContactPage() {
                       <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                       </svg>
-                    </motion.a>
+                    </MotionA>
                   </div>
-                </motion.div>
-              </motion.div>
+                </MotionDiv>
+              </MotionDiv>
             </div>
           </div>
         </section>
@@ -282,7 +285,7 @@ export default function ContactPage() {
         {/* Store Locations Section */}
         <section className="py-20 bg-gray-50">
           <div className="container mx-auto px-6">
-            <motion.div 
+            <MotionDiv 
               className="text-center mb-16"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -293,7 +296,7 @@ export default function ContactPage() {
               <p className="max-w-2xl mx-auto text-gray-600">
                 Visit our flagship showroom in New York or explore our other locations across the country.
               </p>
-            </motion.div>
+            </MotionDiv>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
@@ -319,7 +322,7 @@ export default function ContactPage() {
                   hours: "Mon-Fri: 9am - 6pm\nSat: 10am - 4pm\nSun: Closed"
                 }
               ].map((location, index) => (
-                <motion.div 
+                <MotionDiv 
                   key={index}
                   className="bg-white p-6 rounded-lg shadow-sm"
                   initial={{ opacity: 0, y: 50 }}
@@ -336,7 +339,7 @@ export default function ContactPage() {
                       </React.Fragment>
                     ))}
                   </p>
-                  <motion.div 
+                  <MotionDiv 
                     className="h-60 relative rounded-lg overflow-hidden mb-4"
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.3 }}
@@ -347,7 +350,7 @@ export default function ContactPage() {
                       fill
                       className="object-cover"
                     />
-                  </motion.div>
+                  </MotionDiv>
                   <p className="text-sm text-gray-500 mb-3">
                     <span className="font-medium">Opening Hours:</span><br />
                     {location.hours.split('\n').map((line, i) => (
@@ -356,7 +359,7 @@ export default function ContactPage() {
                       </React.Fragment>
                     ))}
                   </p>
-                  <motion.a
+                  <MotionA
                     href="https://maps.google.com"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -368,8 +371,8 @@ export default function ContactPage() {
                     <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
-                  </motion.a>
-                </motion.div>
+                  </MotionA>
+                </MotionDiv>
               ))}
             </div>
           </div>
@@ -378,7 +381,7 @@ export default function ContactPage() {
         {/* FAQ Section */}
         <section className="py-20 bg-white">
           <div className="container mx-auto px-6">
-            <motion.div 
+            <MotionDiv 
               className="text-center mb-16"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -389,9 +392,9 @@ export default function ContactPage() {
               <p className="max-w-2xl mx-auto text-gray-600">
                 Find quick answers to common questions about our services and policies.
               </p>
-            </motion.div>
+            </MotionDiv>
             
-            <motion.div 
+            <MotionDiv 
               className="max-w-3xl mx-auto space-y-6"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -416,7 +419,7 @@ export default function ContactPage() {
                   answer: "We offer a 30-day return policy for stock items in original condition. Custom pieces are non-returnable. Please inspect all furniture upon delivery and notify us immediately of any issues. A 15% restocking fee may apply to returns."
                 }
               ].map((faq, index) => (
-                <motion.div 
+                <MotionDiv 
                   key={index}
                   className="bg-gray-100 p-6 rounded-lg"
                   initial={{ opacity: 0, x: index % 2 === 0 ? -30 : 30 }}
@@ -429,11 +432,11 @@ export default function ContactPage() {
                   <p className="text-gray-600">
                     {faq.answer}
                   </p>
-                </motion.div>
+                </MotionDiv>
               ))}
-            </motion.div>
+            </MotionDiv>
             
-            <motion.div 
+            <MotionDiv 
               className="text-center mt-10"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -443,15 +446,15 @@ export default function ContactPage() {
               <p className="text-gray-600 mb-4">
                 Don&apos;t see your question here? Contact our customer service team.
               </p>
-              <motion.a
+              <MotionA
                 href="mailto:info@fabrique.com"
                 className="inline-block px-8 py-3 bg-amber-800 text-white font-medium rounded-md hover:bg-amber-900 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 Email Customer Service
-              </motion.a>
-            </motion.div>
+              </MotionA>
+            </MotionDiv>
           </div>
         </section>
       </main>

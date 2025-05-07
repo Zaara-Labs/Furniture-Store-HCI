@@ -2,12 +2,30 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import RoleBasedRoute from '@/components/auth/RoleBasedRoute';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import DashboardStats from '@/components/dashboard/DashboardStats';
-import DesignProjects from '@/components/dashboard/DesignProjects';
-import CustomerRequests from '@/components/dashboard/CustomerRequests';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
+import RoleBasedRoute from '@/components/auth/RoleBasedRoute';
+
+// Import components with dynamic loading to prevent server-side rendering issues
+const DashboardLayout = dynamic(
+  () => import('@/components/dashboard/DashboardLayout'),
+  { ssr: false }
+);
+
+const DashboardStats = dynamic(
+  () => import('@/components/dashboard/DashboardStats'),
+  { ssr: false }
+);
+
+const DesignProjects = dynamic(
+  () => import('@/components/dashboard/DesignProjects'),
+  { ssr: false }
+);
+
+const CustomerRequests = dynamic(
+  () => import('@/components/dashboard/CustomerRequests'),
+  { ssr: false }
+);
 
 export default function DesignerDashboard() {
   const { user, loading } = useAuth();
