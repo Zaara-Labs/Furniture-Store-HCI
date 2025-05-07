@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import { productService } from "@/services/appwrite";
 import { ProductCategory } from "@/types/collections/ProductCategory";
 import { Product } from "@/types/collections/Product";
+import { motion } from "framer-motion";
 
 // Loading component that will be displayed when the shop content is loading
 function ShopLoading() {
@@ -46,12 +47,54 @@ function ShopLoading() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="animate-pulse">
-                <div className="bg-gray-200 aspect-square rounded-lg w-full"></div>
-                <div className="mt-4 bg-gray-200 h-4 w-3/4 rounded"></div>
-                <div className="mt-2 bg-gray-200 h-4 w-1/2 rounded"></div>
-                <div className="mt-2 bg-gray-200 h-4 w-1/4 rounded"></div>
-              </div>
+              <motion.div 
+                key={index} 
+                className="bg-white rounded-lg overflow-hidden shadow-sm"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ 
+                  opacity: 1, 
+                  y: 0,
+                  transition: {
+                    duration: 0.5,
+                    delay: index * 0.1, // Staggered animation for each card
+                  }
+                }}
+              >
+                <div className="aspect-square relative bg-gray-100 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200 animate-shimmer" 
+                       style={{ 
+                         backgroundSize: '200% 100%',
+                         animation: 'shimmer 1.5s infinite'
+                       }}
+                  ></div>
+                </div>
+                <div className="p-4 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded-full w-1/3 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-gray-200 to-gray-300 animate-shimmer" 
+                         style={{ 
+                           backgroundSize: '200% 100%',
+                           animation: 'shimmer 1.5s infinite'
+                         }}
+                    ></div>
+                  </div>
+                  <div className="h-5 bg-gray-200 rounded-full w-3/4 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-gray-200 to-gray-300 animate-shimmer" 
+                         style={{ 
+                           backgroundSize: '200% 100%',
+                           animation: 'shimmer 1.5s infinite'
+                         }}
+                    ></div>
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded-full w-1/4 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-gray-200 to-gray-300 animate-shimmer" 
+                         style={{ 
+                           backgroundSize: '200% 100%',
+                           animation: 'shimmer 1.5s infinite'
+                         }}
+                    ></div>
+                  </div>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -229,12 +272,54 @@ function ShopContent() {
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="animate-pulse">
-                  <div className="bg-gray-200 aspect-square rounded-lg w-full"></div>
-                  <div className="mt-4 bg-gray-200 h-4 w-3/4 rounded"></div>
-                  <div className="mt-2 bg-gray-200 h-4 w-1/2 rounded"></div>
-                  <div className="mt-2 bg-gray-200 h-4 w-1/4 rounded"></div>
-                </div>
+                <motion.div 
+                  key={index} 
+                  className="bg-white rounded-lg overflow-hidden shadow-sm"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    transition: {
+                      duration: 0.5,
+                      delay: index * 0.1, // Staggered animation for each card
+                    }
+                  }}
+                >
+                  <div className="aspect-square relative bg-gray-100 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200 animate-shimmer" 
+                         style={{ 
+                           backgroundSize: '200% 100%',
+                           animation: 'shimmer 1.5s infinite'
+                         }}
+                    ></div>
+                  </div>
+                  <div className="p-4 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded-full w-1/3 overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-gray-200 to-gray-300 animate-shimmer" 
+                           style={{ 
+                             backgroundSize: '200% 100%',
+                             animation: 'shimmer 1.5s infinite'
+                           }}
+                      ></div>
+                    </div>
+                    <div className="h-5 bg-gray-200 rounded-full w-3/4 overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-gray-200 to-gray-300 animate-shimmer" 
+                           style={{ 
+                             backgroundSize: '200% 100%',
+                             animation: 'shimmer 1.5s infinite'
+                           }}
+                      ></div>
+                    </div>
+                    <div className="h-4 bg-gray-200 rounded-full w-1/4 overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-gray-200 to-gray-300 animate-shimmer" 
+                           style={{ 
+                             backgroundSize: '200% 100%',
+                             animation: 'shimmer 1.5s infinite'
+                           }}
+                      ></div>
+                    </div>
+                  </div>
+                </motion.div>
               ))}
             </div>
           ) : error ? (
@@ -253,33 +338,63 @@ function ShopContent() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.map((product) => (
-                <Link key={product.$id} href={`/product/${product.slug}`}>
-                  <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
-                    <div className="aspect-square relative">
-                      {product.main_image_url || (product.variation_images && product.variation_images.length > 0) ? (
-                        <Image
-                          src={(product.main_image_url || product.variation_images?.[0])!}
-                          alt={product.name}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              {products.map((product, index) => (
+                <motion.div 
+                  key={product.$id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    duration: 0.6, 
+                    delay: index * 0.1,
+                    ease: [0.43, 0.13, 0.23, 0.96] // Custom easing for elegant motion
+                  }}
+                  whileHover={{ 
+                    y: -10, 
+                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                    transition: { duration: 0.3 } 
+                  }}
+                >
+                  <Link href={`/product/${product.slug}`}>
+                    <div className="bg-white rounded-lg overflow-hidden shadow-sm transition-all duration-300 h-full">
+                      <div className="aspect-square relative overflow-hidden">
+                        {product.main_image_url || (product.variation_images && product.variation_images.length > 0) ? (
+                          <Image
+                            src={(product.main_image_url || product.variation_images?.[0])!}
+                            alt={product.name}
+                            fill
+                            className="object-cover transition-transform duration-700 ease-out"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            style={{
+                              transform: "scale(1.01)"
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                            <span className="text-gray-400">No image</span>
+                          </div>
+                        )}
+                        <motion.div 
+                          className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0"
+                          initial={{ opacity: 0 }}
+                          whileHover={{ opacity: 1 }}
+                          transition={{ duration: 0.3 }}
                         />
-                      ) : (
-                        <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                          <span className="text-gray-400">No image</span>
-                        </div>
-                      )}
+                      </div>
+                      <motion.div 
+                        className="p-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3, delay: 0.2 + index * 0.1 }}
+                      >
+                        <p className="text-sm text-amber-800 mb-1">
+                          {categories.find(c => c.$id === product.category)?.name || 'Unknown Category'}
+                        </p>
+                        <h3 className="font-medium text-gray-800 mb-2">{product.name}</h3>
+                        <p className="text-gray-700">${product.variation_prices ? product.variation_prices[0]?.toFixed(2) : 'N/A'}</p>
+                      </motion.div>
                     </div>
-                    <div className="p-4">
-                      <p className="text-sm text-amber-800 mb-1">
-                        {categories.find(c => c.$id === product.category)?.name || 'Unknown Category'}
-                      </p>
-                      <h3 className="font-medium text-gray-800 mb-2">{product.name}</h3>
-                      <p className="text-gray-700">${product.variation_prices ? product.variation_prices[0]?.toFixed(2) : 'N/A'}</p>
-                    </div>
-                  </div>
-                </Link>
+                  </Link>
+                </motion.div>
               ))}
             </div>
           )}
