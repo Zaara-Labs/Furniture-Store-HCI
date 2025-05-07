@@ -9,6 +9,12 @@ export interface RoomSettings {
   floorColor: string;
 }
 
+export interface CameraSettings {
+  position: [number, number, number];
+  target?: [number, number, number]; // Where the camera is looking
+  viewAngle: number;
+}
+
 export interface FurnitureItemProps {
   id: string;
   instanceId: string; // Unique ID for each instance of a furniture item

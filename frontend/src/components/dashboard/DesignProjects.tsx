@@ -11,37 +11,6 @@ type DesignProjectProps = {
   lastUpdated: string;
 };
 
-const projects: DesignProjectProps[] = [
-  {
-    id: 'proj-1',
-    name: 'Living Room Modern Setup',
-    customer: 'James Wilson',
-    status: 'in-progress',
-    lastUpdated: '2 days ago'
-  },
-  {
-    id: 'proj-2',
-    name: 'Office Workspace Redesign',
-    customer: 'Sarah Miller',
-    status: 'review',
-    lastUpdated: '1 day ago'
-  },
-  {
-    id: 'proj-3',
-    name: 'Bedroom Furniture Set',
-    customer: 'Robert Johnson',
-    status: 'completed',
-    lastUpdated: '3 days ago'
-  },
-  {
-    id: 'proj-4',
-    name: 'Kitchen Cabinet Setup',
-    customer: 'Emily Davis',
-    status: 'in-progress',
-    lastUpdated: '5 hours ago'
-  }
-];
-
 export default function DesignProjects() {
   // Status badge component
   const StatusBadge = ({ status }: { status: DesignProjectProps['status'] }) => {

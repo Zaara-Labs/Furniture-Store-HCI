@@ -298,6 +298,178 @@
                     ]
                 }
             ]
+        },
+        {
+            "$id": "681acbd00005fcf4b221",
+            "$permissions": [],
+            "databaseId": "67f5616b000b636218db",
+            "name": "cart",
+            "enabled": true,
+            "documentSecurity": false,
+            "attributes": [
+                {
+                    "key": "userId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 20,
+                    "default": null
+                },
+                {
+                    "key": "products",
+                    "type": "relationship",
+                    "required": false,
+                    "array": false,
+                    "relatedCollection": "67f69b00000c211cf835",
+                    "relationType": "manyToMany",
+                    "twoWay": false,
+                    "twoWayKey": "681accc1000e28aecd7c",
+                    "onDelete": "setNull",
+                    "side": "parent"
+                },
+                {
+                    "key": "quantities",
+                    "type": "integer",
+                    "required": false,
+                    "array": true,
+                    "min": 0,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "created_at",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                },
+                {
+                    "key": "updated_at",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "cart_index",
+                    "type": "key",
+                    "status": "available",
+                    "attributes": [
+                        "userId"
+                    ],
+                    "orders": [
+                        "ASC"
+                    ]
+                }
+            ]
+        },
+        {
+            "$id": "681acfaa00300e79201f",
+            "$permissions": [],
+            "databaseId": "67f5616b000b636218db",
+            "name": "design_projects",
+            "enabled": true,
+            "documentSecurity": false,
+            "attributes": [
+                {
+                    "key": "name",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 100,
+                    "default": null
+                },
+                {
+                    "key": "description",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 250,
+                    "default": null
+                },
+                {
+                    "key": "designerId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 20,
+                    "default": null
+                },
+                {
+                    "key": "customerId",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 20,
+                    "default": null
+                },
+                {
+                    "key": "thumbnailUrl",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "format": "url",
+                    "default": null
+                },
+                {
+                    "key": "status",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "elements": [
+                        "Draft",
+                        "In Progress",
+                        "Completed"
+                    ],
+                    "format": "enum",
+                    "default": "Draft"
+                },
+                {
+                    "key": "room",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 75,
+                    "default": null
+                },
+                {
+                    "key": "camera",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 70,
+                    "default": null
+                },
+                {
+                    "key": "furniture",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 1000,
+                    "default": null
+                },
+                {
+                    "key": "createdAt",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                },
+                {
+                    "key": "updated_at",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                }
+            ],
+            "indexes": []
         }
     ],
     "buckets": [
@@ -351,7 +523,24 @@
                 "jpg",
                 "png",
                 "gif",
-                "webp"
+                "webp",
+                "jpeg"
+            ],
+            "compression": "none",
+            "encryption": true,
+            "antivirus": true
+        },
+        {
+            "$id": "681ae81f0008111016d3",
+            "$permissions": [],
+            "fileSecurity": false,
+            "name": "design-project-thumbnails",
+            "enabled": true,
+            "maximumFileSize": 5000000000,
+            "allowedFileExtensions": [
+                "jpg",
+                "png",
+                "gif"
             ],
             "compression": "none",
             "encryption": true,

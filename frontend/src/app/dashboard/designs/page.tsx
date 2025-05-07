@@ -7,74 +7,85 @@ import Image from 'next/image';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import RoleBasedRoute from '@/components/auth/RoleBasedRoute';
 import { useAuth } from '@/context/AuthContext';
-
-// Mock data for design projects (in a real app, this would come from your database)
-const mockProjects = [
-  {
-    id: '1',
-    name: 'Modern Living Room',
-    client: 'Emma Thompson',
-    status: 'In Progress',
-    lastUpdated: '2025-05-01',
-    thumbnailUrl: '/images/living-room.jpg'
-  },
-  {
-    id: '2',
-    name: 'Minimalist Bedroom',
-    client: 'David Chen',
-    status: 'Completed',
-    lastUpdated: '2025-04-28',
-    thumbnailUrl: '/images/bedroom.jpg'
-  },
-  {
-    id: '3',
-    name: 'Executive Office',
-    client: 'Sarah Johnson',
-    status: 'Pending Review',
-    lastUpdated: '2025-04-25',
-    thumbnailUrl: '/images/office.jpg'
-  },
-  {
-    id: '4',
-    name: 'Urban Dining Space',
-    client: 'Michael Rodriguez',
-    status: 'Completed',
-    lastUpdated: '2025-04-20',
-    thumbnailUrl: '/images/dining.jpg'
-  }
-];
+import designProjectService, { DesignProject } from '@/services/designProjectService';
 
 export default function DesignProjects() {
-  const [projects, setProjects] = useState(mockProjects);
-  const [isLoading, setIsLoading] = useState(false);
+  const [projects, setProjects] = useState<DesignProject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
   const { user, loading } = useAuth();
   const router = useRouter();
-  
+
+  // Fetch design projects when component mounts
   useEffect(() => {
-    // If not loading and no user, redirect to login
-    if (!loading && !user) {
+    const fetchProjects = async () => {
+      if (user && user.$id) {
+        try {
+          const fetchedProjects = await designProjectService.getDesignerProjects(user.$id);
+          setProjects(fetchedProjects);
+        } catch (error) {
+          console.error('Error fetching design projects:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    if (user) {
+      fetchProjects();
+    } else if (!loading) {
+      // If not loading and no user, redirect to login
       router.push('/auth/login?redirect=/dashboard/designs');
     }
-  }, [loading, user, router]);
+  }, [user, loading, router]);
 
   // Filter projects based on status
   const filteredProjects = filterStatus === 'all' 
     ? projects 
-    : projects.filter(project => project.status.toLowerCase() === filterStatus);
+    : projects.filter(project => project.status.toLowerCase() === filterStatus.toLowerCase());
 
   const handleCreateNewDesign = () => {
-    // In a real implementation, this would navigate to a design creation page
-    router.push('/dashboard/designs/new');
+    // Navigate to the room designer to create a new project
+    router.push('/room-designer');
   };
 
-  const getStatusColor = (status) => {
+  const handleDeleteProject = async (event: React.MouseEvent, projectId: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (confirm('Are you sure you want to delete this design project? This action cannot be undone.')) {
+      setIsLoading(true);
+      
+      try {
+        // Find the project to get the thumbnail URL
+        const projectToDelete = projects.find(project => project.$id === projectId);
+        
+        // Delete thumbnail if it exists
+        if (projectToDelete?.thumbnailUrl) {
+          await designProjectService.deleteThumbnail(projectToDelete.thumbnailUrl);
+        }
+        
+        // Delete the project
+        await designProjectService.deleteProject(projectId);
+        
+        // Remove the deleted project from state
+        setProjects(projects.filter(project => project.$id !== projectId));
+      } catch (error) {
+        console.error('Error deleting project:', error);
+        alert('Failed to delete the project. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const getStatusColor = (status: string) => {
     switch(status.toLowerCase()) {
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'in progress':
         return 'bg-blue-100 text-blue-800';
-      case 'pending review':
+      case 'draft':
         return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -96,9 +107,9 @@ export default function DesignProjects() {
                   className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm rounded-md"
                 >
                   <option value="all">All Projects</option>
-                  <option value="in progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="pending review">Pending Review</option>
+                  <option value="Draft">Draft</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
                 </select>
               </div>
 
@@ -138,40 +149,54 @@ export default function DesignProjects() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredProjects.map((project) => (
-                    <Link 
-                      key={project.id}
-                      href={`/dashboard/designs/${project.id}`}
-                      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                    <div
+                      key={project.$id}
+                      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 relative group"
                     >
-                      <div className="relative h-48 w-full">
-                        {project.thumbnailUrl ? (
-                          <Image
-                            src={project.thumbnailUrl}
-                            alt={project.name}
-                            fill
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
-                            <svg className="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 22V12h6v10" />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <div className="flex justify-between items-start">
-                          <h3 className="text-lg font-medium text-gray-900 truncate">{project.name}</h3>
-                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(project.status)}`}>
-                            {project.status}
-                          </span>
+                      <Link href={`/room-designer?projectId=${project.$id}`}>
+                        <div className="relative h-48 w-full">
+                          {project.thumbnailUrl ? (
+                            <Image
+                              src={project.thumbnailUrl}
+                              alt={project.name}
+                              fill
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                              <svg className="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 22V12h6v10" />
+                              </svg>
+                            </div>
+                          )}
                         </div>
-                        <p className="mt-1 text-sm text-gray-500">Client: {project.client}</p>
-                        <p className="mt-3 text-sm text-gray-500">Last updated: {new Date(project.lastUpdated).toLocaleDateString()}</p>
-                      </div>
-                    </Link>
+                        <div className="p-4">
+                          <div className="flex justify-between items-start">
+                            <h3 className="text-lg font-medium text-gray-900 truncate">{project.name}</h3>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(project.status)}`}>
+                              {project.status}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm text-gray-500">{project.description || 'No description'}</p>
+                          <p className="mt-3 text-sm text-gray-500">
+                            {project.createdAt ? `Created: ${new Date(project.createdAt).toLocaleDateString()}` : ''}
+                          </p>
+                        </div>
+                      </Link>
+                      
+                      {/* Delete button that appears on hover */}
+                      <button
+                        onClick={(e) => project.$id && handleDeleteProject(e, project.$id)}
+                        className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        aria-label="Delete project"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
