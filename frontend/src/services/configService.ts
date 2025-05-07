@@ -1,95 +1,64 @@
-import appwriteConfig from '../../appwrite.json';
+/**
+ * Configuration Service for Appwrite
+ * This service manages all configuration settings for Appwrite connections
+ */
 
-// Define types for the configuration data we need
-interface CollectionConfig {
-  $id: string;
-  name: string;
-  databaseId: string;
-}
+// Use environment variables if available, otherwise fallback to defaults
+const ENDPOINT = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1';
+const PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '681acb4d00068c521ea6';
 
-export interface AppwriteConfig {
-  projectId: string;
-  projectName: string;
-  databaseId: string;
-  collections: {
-    product: string;
-    product_category: string;
-    collection: string;
-  };
-  buckets: {
-    productImages: string;
-    productModels: string;
-  };
-  endpoint: string;
-}
+// Collection IDs
+const COLLECTIONS = {
+  product: '67f69b00000c211cf835',
+  product_category: '67f6abb3002b8c37ca9f',
+  collection: '67f7d9a80003dd74b3d3',
+  user: '681acbc5f9cd976eb9b5',
+  cart: '681acbd00005fcf4b221',
+  wishlist: '681b065b00072d600e69',
+  design_project: '681acfaa00300e79201f',
+};
 
-// This service provides access to configuration values from appwrite.json
-class ConfigService {
-  private config: AppwriteConfig;
+// Bucket IDs for file storage
+const BUCKETS = {
+  productImages: '681acbe70002ac1663c3',
+  productModels: '681acbef000788093e58',
+  designProjectImages: '681acbf80008b791e2cc',
+};
 
-  constructor() {
-    // Extract and structure the configuration data
-    const databaseId = appwriteConfig.databases[0]?.$id || '';
+export const configService = {
+  /**
+   * Get the Appwrite endpoint URL
+   */
+  getEndpoint: () => ENDPOINT,
 
-    // Find collections by name
-    const findCollection = (name: string): CollectionConfig | undefined =>
-      appwriteConfig.collections.find(col => col.name === name);
+  /**
+   * Get the Appwrite project ID
+   */
+  getProjectId: () => PROJECT_ID,
 
-    const productCollection = findCollection('product');
-    const categoryCollection = findCollection('product_category');
-    const collectionCollection = findCollection('collection');
+  /**
+   * Get the database ID
+   */
+  getDatabaseId: () => DATABASE_ID,
 
-    // Find buckets by name
-    const productImagesBucket = appwriteConfig.buckets.find(b => b.name === 'product-images');
-    const productModelsBucket = appwriteConfig.buckets.find(b => b.name === 'product-models');
+  /**
+   * Get a collection ID by name
+   * @param name The name of the collection
+   * @returns The collection ID or undefined if not found
+   */
+  getCollectionId: (name: keyof typeof COLLECTIONS): string => {
+    return COLLECTIONS[name] || '';
+  },
 
-    this.config = {
-      projectId: appwriteConfig.projectId,
-      projectName: appwriteConfig.projectName,
-      databaseId: databaseId,
-      collections: {
-        product: productCollection?.$id || '',
-        product_category: categoryCollection?.$id || '',
-        collection: collectionCollection?.$id || '',
-      },
-      buckets: {
-        productImages: productImagesBucket?.$id || '',
-        productModels: productModelsBucket?.$id || '',
-      },
-      // Default endpoint for Appwrite
-      endpoint: 'https://cloud.appwrite.io/v1',
-    };
+  /**
+   * Get a bucket ID by name
+   * @param name The name of the bucket
+   * @returns The bucket ID or undefined if not found
+   */
+  getBucketId: (name: keyof typeof BUCKETS): string => {
+    return BUCKETS[name] || '';
   }
+};
 
-  // Method to get the entire config
-  getConfig(): AppwriteConfig {
-    return this.config;
-  }
-
-  // Helper methods for commonly accessed values
-  getProjectId(): string {
-    return this.config.projectId;
-  }
-
-  getDatabaseId(): string {
-    return this.config.databaseId;
-  }
-
-  getCollectionId(collection: keyof AppwriteConfig['collections']): string {
-    return this.config.collections[collection];
-  }
-
-  getBucketId(bucket: keyof AppwriteConfig['buckets']): string {
-    return this.config.buckets[bucket];
-  }
-
-  getEndpoint(): string {
-    return this.config.endpoint;
-  }
-}
-
-// Export a singleton instance
-export const configService = new ConfigService();
-
-// Also export for testing or for cases where a new instance is needed
-export default ConfigService;
+export default configService;
