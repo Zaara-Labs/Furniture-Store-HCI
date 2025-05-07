@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-50 text-gray-600">
+    <footer className="bg-amber-50 text-gray-600">
       <div className="max-w-7xl mx-auto pt-16 pb-8 px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           <div>
@@ -84,9 +84,9 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm mb-4 md:mb-0">© 2025 FABRIQUÉ. All rights reserved.</p>
             <div className="flex space-x-6">
-              <a href="#" className="text-sm hover:text-amber-800 transition-colors">Terms of Service</a>
-              <a href="#" className="text-sm hover:text-amber-800 transition-colors">Privacy Policy</a>
-              <a href="#" className="text-sm hover:text-amber-800 transition-colors">Sitemap</a>
+              <a href="/terms" className="text-sm hover:text-amber-800 transition-colors">Terms of Service</a>
+              <Link href="/privacy" className="text-sm hover:text-amber-800 transition-colors">Privacy Policy</Link>
+              <a href="/sitemap" className="text-sm hover:text-amber-800 transition-colors">Sitemap</a>
             </div>
           </div>
         </div>

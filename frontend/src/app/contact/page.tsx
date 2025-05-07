@@ -11,7 +11,7 @@ export default function ContactPage() {
       
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="relative h-[40vh] bg-gray-900">
+        <section className="relative h-[60vh] bg-gray-900">
           <div className="absolute inset-0">
             <Image 
               src="/images/landing/hero2.jpg" 
