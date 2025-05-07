@@ -7,7 +7,6 @@ import WishlistItem from "@/components/wishlist/WishlistItem";
 import WishlistEmpty from "@/components/wishlist/WishlistEmpty";
 import { useWishlist } from "@/context/WishlistContext";
 import Link from "next/link";
-import { toast } from "react-hot-toast";
 
 export default function WishlistPage() {
   const { wishlistItems, wishlistCount, clearWishlist, isLoading } = useWishlist();
