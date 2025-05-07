@@ -6,7 +6,6 @@ import Link from "next/link";
 
 export default function CartItemList() {
   const { cartItems, cartCount } = useCart();
-  
   if (cartCount === 0) {
     return (
       <div className="text-center py-16">
@@ -34,6 +33,8 @@ export default function CartItemList() {
               price={item.price}
               quantity={item.quantity}
               image={item.image}
+              slug={item.slug}
+              variant_index={item.variant_index}
             />
           </li>
         ))}

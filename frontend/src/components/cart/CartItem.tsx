@@ -11,10 +11,12 @@ interface CartItemProps {
   name: string;
   price: number;
   quantity: number;
+  slug: string;
   image?: string;
+  variant_index?: number;
 }
 
-export default function CartItem({ id, productId, name, price, quantity, image }: CartItemProps) {
+export default function CartItem({ id, productId, name, price, quantity, image, slug }: CartItemProps) {
   const { updateQuantity, removeFromCart } = useCart();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
@@ -59,7 +61,7 @@ export default function CartItem({ id, productId, name, price, quantity, image }
       <div className="ml-4 flex-1 flex flex-col">
         <div>
           <div className="flex justify-between text-base font-medium text-gray-900">
-            <Link href={`/product/${productId}`} className="hover:text-amber-800">
+            <Link href={`/product/${slug}`} className="hover:text-amber-800">
               <h3>{name}</h3>
             </Link>
             <p className="ml-4">${price.toFixed(2)}</p>
