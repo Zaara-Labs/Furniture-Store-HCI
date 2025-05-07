@@ -174,12 +174,11 @@ export default function CustomizationGuidePage() {
   const selectedMaterial = getSelectedMaterialInfo();
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
-      <main className="flex-grow pt-24 pb-16">
+    <div className="min-h-screen flex flex-col bg-white">
+        <Navbar />
+      <main className="flex-grow">
         {/* Hero Section */}
-        <section className="relative h-[40vh] bg-gray-900">
+        <section className="relative h-[40vh] bg-gray-900 mt-[72px]">
           <div className="absolute inset-0">
             <Image 
               src="/images/landing/interior.jpg" 
@@ -624,7 +623,7 @@ export default function CustomizationGuidePage() {
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <h3 className="text-lg font-medium mb-3">What if I&apos;m not happy with my custom piece?</h3>
                   <p className="text-gray-700">
-                    We want you to be completely satisfied with your purchase. If your piece doesn&apos;t meet your expectations due to a manufacturing defect, we'll work with you to resolve the issue. Custom orders cannot be returned due to their unique nature, but we'll do everything possible to ensure you're happy with the final product.
+                    We want you to be completely satisfied with your purchase. If your piece doesn&apos;t meet your expectations due to a manufacturing defect, we&apos;ll work with you to resolve the issue. Custom orders cannot be returned due to their unique nature, but we&apos;ll do everything possible to ensure you&apos;re happy with the final product.
                   </p>
                 </div>
                 
