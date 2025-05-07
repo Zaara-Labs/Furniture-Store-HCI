@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { motion } from "framer-motion";
 
 export default function CustomizationGuidePage() {
   const [selectedCategory, setSelectedCategory] = useState<"wood" | "fabric" | "leather" | "finish">("wood");
@@ -292,12 +293,31 @@ export default function CustomizationGuidePage() {
               priority
             />
           </div>
-          <div className="absolute inset-0 flex items-center justify-center">
+          <motion.div 
+            className="absolute inset-0 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+          >
             <div className="text-center mx-auto px-6">
-              <h1 className="text-4xl md:text-5xl font-serif font-medium text-white mb-4">Customization Guide</h1>
-              <p className="text-xl text-white max-w-2xl">Explore materials, finishes, and options to create your perfect piece</p>
+              <motion.h1 
+                className="text-4xl md:text-5xl font-serif font-medium text-white mb-4"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+              >
+                Customization Guide
+              </motion.h1>
+              <motion.p 
+                className="text-xl text-white max-w-2xl"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.5 }}
+              >
+                Explore materials, finishes, and options to create your perfect piece
+              </motion.p>
             </div>
-          </div>
+          </motion.div>
         </section>
         
         {/* Introduction Section */}
