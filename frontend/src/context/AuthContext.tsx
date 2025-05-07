@@ -9,6 +9,7 @@ type User = {
   $id: string;
   email: string;
   name: string;
+  role?: 'customer' | 'designer'; // Add role field
   // Add other fields as needed
 };
 
@@ -17,9 +18,10 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (email: string, password: string, name: string, role?: 'customer' | 'designer') => Promise<void>;
   logout: () => Promise<void>;
   checkAuthStatus: () => Promise<void>;
+  isDesigner: () => boolean; // Add function to check if user is designer
 };
 
 // Create context with default values
@@ -30,6 +32,7 @@ const AuthContext = createContext<AuthContextType>({
   signup: async () => {},
   logout: async () => {},
   checkAuthStatus: async () => {},
+  isDesigner: () => false, // Default implementation
 });
 
 // Custom hook to use the auth context
@@ -53,7 +56,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const currentUser = await appwriteService.getCurrentUser();
       
       if (currentUser) {
-        setUser(currentUser);
+        // Type-safe conversion of the Appwrite user to our User type
+        setUser({
+          $id: currentUser.$id,
+          email: currentUser.email,
+          name: currentUser.name,
+          role: (currentUser.role === 'customer' || currentUser.role === 'designer') 
+            ? currentUser.role as 'customer' | 'designer' 
+            : undefined
+        });
       } else {
         setUser(null);
       }
@@ -63,6 +74,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Function to check if user is a designer
+  const isDesigner = (): boolean => {
+    return user?.role === 'designer';
   };
 
   // Login function
@@ -118,6 +134,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signup,
     logout,
     checkAuthStatus,
+    isDesigner,
   };
 
   return (

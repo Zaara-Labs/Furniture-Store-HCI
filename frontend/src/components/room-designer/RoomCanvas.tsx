@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, Suspense } from 'react';
+import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
 import * as THREE from 'three';
@@ -12,16 +12,20 @@ import ViewControls from './ViewControls';
 import RoomSettings from './RoomSettings';
 import FurnitureControls from './FurnitureControls';
 import FurnitureList from './FurnitureList';
-import { RoomSettings as RoomSettingsType, FurnitureItemProps } from '@/types/room-designer';
+import { RoomSettings as RoomSettingsType, FurnitureItemProps, CameraSettings } from '@/types/room-designer';
 import { Product } from '@/types/collections/Product';
 
 interface RoomCanvasProps {
   room: RoomSettingsType;
   furniture: FurnitureItemProps[];
+  camera: CameraSettings;
   products: Product[];
   selectedItemIndex: number | null;
   draggingEnabled: boolean;
+  cameraRef: React.RefObject<THREE.PerspectiveCamera>;
+  controlsRef: React.RefObject<OrbitControlsImpl>;
   onUpdateRoom: (dimensions: Partial<RoomSettingsType>) => void;
+  onUpdateCamera?: (settings: Partial<CameraSettings>) => void;
   onSelectFurniture: (index: number) => void;
   onUpdatePosition: (index: number, newPos: [number, number, number]) => void;
   onRotate: (index: number, axis: 'x' | 'y' | 'z', degrees: number) => void;
@@ -29,30 +33,29 @@ interface RoomCanvasProps {
   onRemoveFurniture: (index: number) => void;
   onUpdateTexture: (index: number, textureUrl: string) => void;
   onToggleDragging: () => void;
+  onCaptureCameraState?: () => void;
 }
 
 const RoomCanvas = ({
   room,
   furniture,
+  camera,
   products,
   selectedItemIndex,
   draggingEnabled,
+  cameraRef,
+  controlsRef,
   onUpdateRoom,
+  onUpdateCamera,
   onSelectFurniture,
   onUpdatePosition,
   onRotate,
   onScale,
   onRemoveFurniture,
   onUpdateTexture,
-  onToggleDragging
+  onToggleDragging,
+  onCaptureCameraState
 }: RoomCanvasProps) => {
-  // Camera related refs
-  const cameraRef = useRef<THREE.PerspectiveCamera>(null);
-  const controlsRef = useRef<OrbitControlsImpl>(null);
-  
-  // Initial camera position
-  const initialCameraPosition: [number, number, number] = [8, 5, 16];
-
   return (
     <div className="h-[60vh] md:h-auto md:w-[70%] relative bg-gray-50 border-b md:border-b-0">
       <Canvas 
@@ -95,17 +98,26 @@ const RoomCanvas = ({
           dampingFactor={0.1}
           minDistance={2}
           maxDistance={30}
-          target={[room.width / 2, room.height / 2, room.length / 2]}
+          target={camera.target || [room.width / 2, room.height / 2, room.length / 2]}
           enabled={!draggingEnabled || selectedItemIndex === null}
+          onChange={() => onCaptureCameraState?.()}
         />
         
         <PerspectiveCamera
           makeDefault
           ref={cameraRef}
-          position={initialCameraPosition}
-          fov={45}
+          position={camera.position}
+          fov={camera.viewAngle}
           near={0.1}
           far={1000}
+          onUpdate={(self) => {
+            if (onUpdateCamera) {
+              onUpdateCamera({
+                position: [self.position.x, self.position.y, self.position.z] as [number, number, number],
+                viewAngle: self.fov
+              });
+            }
+          }}
         />
         
         <Environment preset="sunset" background={false} />

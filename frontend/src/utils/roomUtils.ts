@@ -30,3 +30,28 @@ export const calculateInitialCameraPosition = (room: { width: number, length: nu
   const distance = Math.max(room.width, room.length) * 1.5;
   return [room.width / 2, room.height / 2, distance];
 };
+
+/**
+ * Captures a screenshot from the Three.js canvas
+ * @returns Promise with data URL of the screenshot
+ */
+export const captureCanvasScreenshot = (): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Find the canvas element created by Three.js
+      const canvas = document.querySelector('canvas');
+
+      if (!canvas) {
+        reject(new Error('Canvas element not found'));
+        return;
+      }
+
+      // Generate a PNG data URL from the canvas
+      const dataUrl = canvas.toDataURL('image/png');
+      resolve(dataUrl);
+    } catch (error) {
+      console.error('Error capturing screenshot:', error);
+      reject(error);
+    }
+  });
+};

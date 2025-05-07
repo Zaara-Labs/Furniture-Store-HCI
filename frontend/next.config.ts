@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
         pathname: "/v1/storage/buckets/**/files/**/view",
       },
     ],
+    domains: ['localhost'],
+    unoptimized: true,
   }
 };
 
