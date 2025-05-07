@@ -39,24 +39,24 @@ export default function TermsOfServicePage() {
                 </p>
                 
                 <h2 className="text-2xl font-serif font-medium mb-4">Agreement to Terms</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   These Terms of Service constitute a legally binding agreement made between you, whether personally or on behalf of an entity (&quot;you&quot;) and 
                   FABRIQUÉ (&quot;we,&quot; &quot;us&quot; or &quot;our&quot;), concerning your access to and use of the FABRIQUÉ website as well as any other media form, media channel, 
                   mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the &quot;Site&quot;).
                 </p>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   You agree that by accessing the Site, you have read, understood, and agree to be bound by all of these Terms of Service. If you do not agree with 
                   all of these Terms of Service, then you are expressly prohibited from using the Site and you must discontinue use immediately.
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Intellectual Property Rights</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   Unless otherwise indicated, the Site is our proprietary property and all source code, databases, functionality, software, website designs, 
                   audio, video, text, photographs, and graphics on the Site (collectively, the &quot;Content&quot;) and the trademarks, service marks, and logos contained 
                   therein (the &quot;Marks&quot;) are owned or controlled by us or licensed to us, and are protected by copyright and trademark laws and various other 
                   intellectual property rights and unfair competition laws.
                 </p>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   The Content and the Marks are provided on the Site &quot;AS IS&quot; for your information and personal use only. Except as expressly provided in these 
                   Terms of Service, no part of the Site and no Content or Marks may be copied, reproduced, aggregated, republished, uploaded, posted, publicly 
                   displayed, encoded, translated, transmitted, distributed, sold, licensed, or otherwise exploited for any commercial purpose whatsoever, 
@@ -77,12 +77,12 @@ export default function TermsOfServicePage() {
                 </ul>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Products</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   We make every effort to display as accurately as possible the colors, features, specifications, and details of the products available on the 
                   Site. However, we do not guarantee that the colors, features, specifications, and details of the products will be accurate, complete, reliable, 
                   current, or free of other errors, and your electronic display may not accurately reflect the actual colors and details of the products.
                 </p>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   All products are subject to availability, and we cannot guarantee that items will be in stock. We reserve the right to discontinue any products 
                   at any time for any reason. Prices for all products are subject to change.
                 </p>
@@ -92,7 +92,7 @@ export default function TermsOfServicePage() {
                   <h2 className="text-2xl font-serif font-medium mb-4 text-amber-800">Shipping & Returns</h2>
                   
                   <h3 className="text-xl font-medium mb-3 mt-6">Shipping Policy</h3>
-                  <p className="mb-4">
+                  <p className="mb-4 text-justify">
                     FABRIQUÉ offers shipping services to destinations within our designated service areas. Shipping costs and delivery timeframes are as follows:
                   </p>
                   <ul className="list-disc pl-6 mb-6">
@@ -102,13 +102,13 @@ export default function TermsOfServicePage() {
                     <li>White glove delivery service: Available at an additional cost</li>
                     <li>Assembly services: Available for most furniture items</li>
                   </ul>
-                  <p className="mb-6">
+                  <p className="mb-6 text-justify">
                     Our delivery team will contact you to schedule a delivery window that works with your schedule. For large items,
                     please ensure there is adequate access to your home and the intended room.
                   </p>
                   
                   <h3 className="text-xl font-medium mb-3 mt-6">Return Policy</h3>
-                  <p className="mb-4">
+                  <p className="mb-4 text-justify">
                     We stand behind the quality of our products. Our return policy includes the following provisions:
                   </p>
                   <ul className="list-disc pl-6 mb-6">
@@ -119,8 +119,8 @@ export default function TermsOfServicePage() {
                     <li>Return shipping costs are the responsibility of the customer unless the return is due to our error</li>
                     <li>All returns must be pre-authorized by contacting our customer service department</li>
                   </ul>
-                  <p className="mb-4">
-                    To initiate a return, please contact our customer service team at returns@fabrique.com or call (+94) 077-123-4567.
+                  <p className="mb-4 text-justify">
+                    To initiate a return, please contact our customer service team at returns@fabrique.com or feel free to call us on (+94) 077-123-4567.
                   </p>
                   
                   <div className="mt-4">
@@ -137,7 +137,7 @@ export default function TermsOfServicePage() {
                 </div>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Purchases and Payment</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   You agree to provide current, complete, and accurate purchase and account information for all purchases made on the Site. You further agree to 
                   promptly update account and payment information, including email address, payment method, and payment card expiration date, so that we can 
                   complete your transactions and contact you as needed.
@@ -153,23 +153,23 @@ export default function TermsOfServicePage() {
                   <li>PayPal</li>
                   <li>Bank transfers</li>
                 </ul>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   Sales tax will be added to the price of purchases as deemed required by us. We may change prices at any time. All payments shall be in the 
                   currency listed on the Site.
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Order Cancellation</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   You can cancel your order for a full refund before it ships. Once an order has shipped, our standard return policy applies. Custom orders may 
                   be subject to a cancellation fee if production has already begun.
                 </p>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   Please note that certain items, such as custom furniture pieces made to your specifications, may have specific cancellation policies that will 
                   be communicated at the time of purchase.
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Warranty</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   FABRIQUÉ provides the following warranties on our products:
                 </p>
                 <ul className="list-disc pl-6 mb-6">
@@ -178,15 +178,17 @@ export default function TermsOfServicePage() {
                   <li>Fabric and Leather: 1-year limited warranty against manufacturing defects</li>
                   <li>Mechanisms (recliners, sleeper sofas): 2-year limited warranty</li>
                 </ul>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   Warranties do not cover damage due to misuse, improper care, accidents, or normal wear and tear. Detailed warranty information is provided 
                   with each product upon delivery.
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Prohibited Activities</h2>
-                <p className="mb-4">You may not access or use the Site for any purpose other than that for which we make the Site available. The Site may not be used in connection with any commercial endeavors except those that are specifically endorsed or approved by us.</p>
+                <p className="mb-4 text-justify">
+                  You may not access or use the Site for any purpose other than that for which we make the Site available. The Site may not be used in connection with any commercial endeavors except those that are specifically endorsed or approved by us. contact marketing department at marketing@fabrique.com
+                </p>
                 
-                <p className="mb-4">As a user of the Site, you agree not to:</p>
+                <p className="mb-4 text-justify">As a user of the Site, you agree not to:</p>
                 
                 <ul className="list-disc pl-6 mb-6">
                   <li>Systematically retrieve data or other content from the Site to create or compile, directly or indirectly, a collection, compilation, database, or directory without written permission from us.</li>
@@ -198,13 +200,13 @@ export default function TermsOfServicePage() {
                 </ul>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Governing Law</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   These Terms of Service and your use of the Site are governed by and construed in accordance with the laws applicable in Sri Lanka, without 
                   regard to its conflict of law principles.
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Dispute Resolution</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   To expedite resolution and control the cost of any dispute, controversy, or claim related to these Terms of Service (each a &quot;Dispute&quot; and 
                   collectively, the &quot;Disputes&quot;) brought by either you or us (individually, a &quot;Party&quot; and collectively, the &quot;Parties&quot;), the Parties agree to first
                   attempt to negotiate any Dispute informally for at least thirty (30) days before initiating arbitration. Such informal negotiations commence 
@@ -212,14 +214,14 @@ export default function TermsOfServicePage() {
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Corrections</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   There may be information on the Site that contains typographical errors, inaccuracies, or omissions, including descriptions, pricing, 
                   availability, and various other information. We reserve the right to correct any errors, inaccuracies, or omissions and to change or update 
                   the information on the Site at any time, without prior notice.
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Term and Termination</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   These Terms of Service shall remain in full force and effect while you use the Site. WITHOUT LIMITING ANY OTHER PROVISION OF THESE TERMS OF 
                   SERVICE, WE RESERVE THE RIGHT TO, IN OUR SOLE DISCRETION AND WITHOUT NOTICE OR LIABILITY, DENY ACCESS TO AND USE OF THE SITE (INCLUDING 
                   BLOCKING CERTAIN IP ADDRESSES), TO ANY PERSON FOR ANY REASON OR FOR NO REASON, INCLUDING WITHOUT LIMITATION FOR BREACH OF ANY REPRESENTATION, 
@@ -227,7 +229,7 @@ export default function TermsOfServicePage() {
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Contact Us</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   If you have any questions about these Terms of Service, please contact us at:
                 </p>
                 

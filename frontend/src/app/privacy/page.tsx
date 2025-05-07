@@ -39,12 +39,12 @@ export default function PrivacyPolicyPage() {
                 </p>
                 
                 <h2 className="text-2xl font-serif font-medium mb-4">Introduction</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   FABRIQUÉ (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy and ensuring the security of your personal information. 
                   This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website, use our services, 
                   or make purchases from our store.
                 </p>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   By accessing or using our website, you agree to the terms of this Privacy Policy. If you do not agree with the practices described in this policy, 
                   please do not use our website or services.
                 </p>
@@ -98,7 +98,7 @@ export default function PrivacyPolicyPage() {
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Cookies and Tracking Technologies</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   We use cookies, web beacons, and similar technologies to enhance your experience on our website, 
                   analyze traffic patterns, and gather demographic information. You can control cookies through your browser settings, 
                   but disabling them may affect your browsing experience.
@@ -121,26 +121,26 @@ export default function PrivacyPolicyPage() {
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Data Security</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, 
                   accidental loss, destruction, or damage. However, no method of transmission over the Internet or electronic storage is 100% secure, 
                   so we cannot guarantee absolute security.
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Data Retention</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   We retain your personal information for as long as necessary to fulfill the purposes outlined in this Privacy Policy, 
                   unless a longer retention period is required or permitted by law.
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Children&apos;s Privacy</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   Our website is not intended for children under 16 years of age. We do not knowingly collect personal information from children under 16. 
                   If you are a parent or guardian and believe your child has provided us with personal information, please contact us.
                 </p>
 
                 <h2 className="text-2xl font-serif font-medium mb-4 mt-10">Changes to This Privacy Policy</h2>
-                <p className="mb-6">
+                <p className="mb-6 text-justify">
                   We may update this Privacy Policy from time to time. The updated version will be indicated by an updated &quot;Last Updated&quot; date 
                   and will be effective as soon as it is accessible. We encourage you to review this Privacy Policy regularly to stay informed about our information practices.
                 </p>
