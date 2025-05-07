@@ -14,7 +14,7 @@ export default function PrivacyPolicyPage() {
         <section className="relative h-[60vh] bg-gray-900">
           <div className="absolute inset-0">
             <Image 
-              src="/images/landing/hero3.jpg" 
+              src="/images/landing/hero5.jpg" 
               alt="Privacy Policy - FABRIQUÉ" 
               fill
               className="object-cover opacity-60"
@@ -159,7 +159,7 @@ export default function PrivacyPolicyPage() {
               </div>
               
               {/* Call-to-action section */}
-              <div className="mt-16 bg-amber-50 p-8 rounded-lg border border-amber-100">
+              <div className="mt-16 bg-amber-100 p-8 rounded-lg border border-amber-100">
                 <div className="text-center">
                   <h3 className="text-xl font-medium mb-4">Have more questions about your privacy?</h3>
                   <p className="mb-6 text-gray-600">
