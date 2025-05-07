@@ -13,7 +13,7 @@ export default function CartPage() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <main className="flex-grow pt-24 pb-16 px-4">
+      <main className="bg-[#f8f9fa] flex-grow pt-24 pb-16 px-4">
         <div className="container mx-auto">
           <h1 className="text-3xl font-serif font-medium mb-8">Your Cart</h1>
           

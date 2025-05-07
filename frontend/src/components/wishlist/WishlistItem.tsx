@@ -56,10 +56,10 @@ export default function WishlistItem({
       await addToCart({
         productId,
         name,
-        // Ensure price is a number before adding to cart
         price: typeof price === 'number' ? price : 0,
         quantity: 1,
-        image
+        image,
+        slug,
       });
       
       toast.success(`${name} added to cart`);
@@ -99,8 +99,6 @@ export default function WishlistItem({
               </div>
             )}
           </div>
-          
-          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity" />
         </Link>
         
         <button
