@@ -9,6 +9,7 @@ type SignupFormData = {
   email: string;
   password: string;
   confirmPassword: string;
+  role: 'customer' | 'designer';
 };
 
 export default function SignupForm() {
@@ -21,7 +22,11 @@ export default function SignupForm() {
     handleSubmit, 
     watch,
     formState: { errors } 
-  } = useForm<SignupFormData>();
+  } = useForm<SignupFormData>({
+    defaultValues: {
+      role: 'customer'
+    }
+  });
 
   const password = watch('password', '');
 
@@ -29,7 +34,7 @@ export default function SignupForm() {
     try {
       setIsSubmitting(true);
       setError('');
-      await signup(data.email, data.password, data.name);
+      await signup(data.email, data.password, data.name, data.role);
     } catch (error: unknown) {
       if (error instanceof Error) {
         setError(error?.message || 'Failed to create account. Please try again.');
@@ -133,7 +138,7 @@ export default function SignupForm() {
           <p className="mt-1 text-red-600 text-sm">{errors.confirmPassword.message}</p>
         )}
       </div>
-      
+
       <div className="flex items-center">
         <input
           id="terms"

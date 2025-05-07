@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { productService } from '@/services/appwrite';
-import { RoomSettings, FurnitureItemProps } from '@/types/room-designer';
+import { RoomSettings, FurnitureItemProps, CameraSettings } from '@/types/room-designer';
 import { Product } from '@/types/collections/Product';
 import { getUnitConversionFactor } from '@/utils/roomUtils';
+import designProjectService, { DesignProject, ParsedDesignProject } from '@/services/designProjectService';
 
 // Helper to generate UUID
 const generateUUID = () => {
@@ -24,10 +25,23 @@ export function useRoomDesigner() {
     floorColor: '#e0e0e0'
   });
 
+  // Camera state
+  const [camera, setCamera] = useState<CameraSettings>({
+    position: [0, 5, 10],
+    target: [0, 0, 0],
+    viewAngle: 50
+  });
+
+  // Project state
+  const [currentProject, setCurrentProject] = useState<ParsedDesignProject | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const controlsRef = useRef<any>(null);
+
   // Furniture state
   const [furniture, setFurniture] = useState<FurnitureItemProps[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [currentProductId, setCurrentProductId] = useState<string | null>(null);
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
   const [draggingEnabled, setDraggingEnabled] = useState(true);
@@ -46,6 +60,41 @@ export function useRoomDesigner() {
     setRoom(prev => ({ ...prev, ...dimensions }));
   };
 
+  // Update camera settings
+  const updateCamera = (cameraSettings: Partial<CameraSettings>) => {
+    setCamera(prev => ({ ...prev, ...cameraSettings }));
+  };
+
+  // Capture current camera position from refs
+  const captureCurrentCameraState = () => {
+    if (cameraRef.current && controlsRef.current) {
+      const position = [
+        cameraRef.current.position.x,
+        cameraRef.current.position.y,
+        cameraRef.current.position.z
+      ] as [number, number, number];
+
+      const target = [
+        controlsRef.current.target.x,
+        controlsRef.current.target.y,
+        controlsRef.current.target.z
+      ] as [number, number, number];
+
+      setCamera({
+        position,
+        target,
+        viewAngle: cameraRef.current.fov
+      });
+
+      return {
+        position,
+        target,
+        viewAngle: cameraRef.current.fov
+      };
+    }
+    return camera;
+  };
+
   // Add furniture to room with better initial placement
   const addFurniture = (product: Product) => {
     // Skip if product has no 3D model
@@ -60,11 +109,7 @@ export function useRoomDesigner() {
     const depth = product.dim_depth || 1;
     const dimensionSku = product.dim_sku || 'cm';
 
-    // Convert dimensions for placement calculations (if needed)
-    // const unitFactor = getUnitConversionFactor(dimensionSku);
-
     // Calculate initial position - center of room with small offset
-    // This keeps Y at 0 to maintain objects on the floor
     const initialPosition: [number, number, number] = [
       room.width / 2 + (Math.random() * 1 - 0.5),
       0, // Keep on floor
@@ -74,7 +119,7 @@ export function useRoomDesigner() {
     // Create new furniture item with a unique instanceId
     const newFurniture: FurnitureItemProps = {
       id: (product.$id as string),
-      instanceId: generateUUID(), // Add unique instance ID
+      instanceId: generateUUID(),
       name: product.name,
       model: product.model_3d_url,
       position: initialPosition,
@@ -93,7 +138,7 @@ export function useRoomDesigner() {
     setFurniture(prev => [...prev, newFurniture]);
     setCurrentProductId(product.$id);
 
-    // Select the newly added item (important: needs to be the next index)
+    // Select the newly added item
     const newIndex = furniture.length;
     setSelectedItemIndex(newIndex);
   };
@@ -171,15 +216,134 @@ export function useRoomDesigner() {
     setRoom(preset);
   };
 
+  // Design Project Functions
+  const saveProject = async (projectInfo: {
+    name: string;
+    description?: string;
+    designerId: string;
+    customerId?: string[];
+    thumbnailUrl?: string;
+    status?: 'Draft' | 'In Progress' | 'Completed';
+  }) => {
+    try {
+      setIsSaving(true);
+
+      // Capture latest camera state
+      const currentCameraState = captureCurrentCameraState();
+
+      if (currentProject?.$id) {
+        // Update existing project
+        const updatedProject = await designProjectService.updateProject(
+          currentProject.$id,
+          designProjectService.stringifyProject({
+            ...projectInfo,
+            room,
+            camera: currentCameraState,
+            furniture
+          })
+        );
+
+        setCurrentProject(designProjectService.parseProject(updatedProject));
+      } else {
+
+        // Create new project
+        const newProject = await designProjectService.createProject({
+          ...projectInfo,
+          room: JSON.stringify(room),
+          camera: JSON.stringify(currentCameraState),
+          furniture: JSON.stringify(furniture),
+          status: projectInfo.status || 'Draft'
+        });
+
+        setCurrentProject(designProjectService.parseProject(newProject));
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error saving project:", error);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const loadProject = async (projectId: string) => {
+    try {
+      setIsLoading(true);
+      const project = await designProjectService.getProject(projectId);
+      const parsedProject = designProjectService.parseProject(project);
+
+      // Set current room state
+      setRoom(parsedProject.room);
+
+      // Set current camera state
+      setCamera(parsedProject.camera);
+
+      // Set current furniture state
+      setFurniture(parsedProject.furniture);
+
+      // Set current project
+      setCurrentProject(parsedProject);
+
+      return parsedProject;
+    } catch (error) {
+      console.error("Error loading project:", error);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteProject = async (projectId: string) => {
+    try {
+      const success = await designProjectService.deleteProject(projectId);
+
+      if (success && currentProject?.$id === projectId) {
+        // Reset state if the deleted project was the current one
+        setCurrentProject(null);
+      }
+
+      return success;
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      return false;
+    }
+  };
+
+  const createNewProject = () => {
+    // Reset to default state for a new project
+    setRoom({
+      width: 8,
+      length: 8,
+      height: 3,
+      wallColor: '#f5f5f5',
+      floorColor: '#e0e0e0'
+    });
+    setCamera({
+      position: [0, 5, 10],
+      target: [0, 0, 0],
+      viewAngle: 50
+    });
+    setFurniture([]);
+    setCurrentProject(null);
+    setSelectedItemIndex(null);
+  };
+
   return {
     room,
     furniture,
     products,
+    camera,
     isLoading,
+    isSaving,
     currentProductId,
     selectedItemIndex,
     draggingEnabled,
+    currentProject,
+    cameraRef,
+    controlsRef,
     updateRoomDimensions,
+    updateCamera,
     addFurniture,
     updateFurniturePosition,
     updateFurnitureTexture,
@@ -188,6 +352,11 @@ export function useRoomDesigner() {
     removeFurniture,
     toggleDragging,
     selectFurniture,
-    applyRoomPreset
+    applyRoomPreset,
+    saveProject,
+    loadProject,
+    deleteProject,
+    createNewProject,
+    captureCurrentCameraState
   };
 }

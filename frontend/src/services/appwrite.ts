@@ -1,6 +1,6 @@
 import { Client, Account, Storage, ID, Databases, AppwriteException, Query } from 'appwrite';
 import { configService } from './configService';
-import { Product } from '@/types/collections/Product';
+import { Product, ProductCreateInput } from '@/types/collections/Product';
 
 // Initialize Appwrite client
 const client = new Client();
@@ -11,6 +11,8 @@ const APPWRITE_PROJECT_ID = configService.getProjectId();
 const DATABASE_ID = configService.getDatabaseId();
 const PRODUCT_COLLECTION_ID = configService.getCollectionId('product');
 const PRODUCT_CATEGORY_COLLECTION_ID = configService.getCollectionId('product_category');
+const PRODUCT_IMAGES_BUCKET_ID = configService.getBucketId('productImages');
+const PRODUCT_MODELS_BUCKET_ID = configService.getBucketId('productModels');
 
 // Check if required configuration is available
 if (!APPWRITE_PROJECT_ID) {
@@ -51,16 +53,18 @@ const storeAnonSessionId = (sessionId: string): void => {
 // Authentication functions
 export const appwriteService = {
   // Create a new account
-  createAccount: async (email: string, password: string, name: string) => {
+  createAccount: async (email: string, password: string, name: string, role: 'customer' | 'designer' = 'customer') => {
     try {
+      const userId = ID.unique();
       const newAccount = await account.create(
-        ID.unique(),
+        userId,
         email,
         password,
         name
       );
 
       if (newAccount) {
+
         // Login immediately after successful signup
         return await appwriteService.login(email, password);
       } else {
@@ -94,7 +98,19 @@ export const appwriteService = {
   // Get current user
   getCurrentUser: async () => {
     try {
-      return await account.get();
+      const currentAccount = await account.get();
+
+      if (!currentAccount) return null;
+
+      // Determine user role from the labels
+      // If user has 'designer' label, use that role, otherwise default to 'customer'
+      const role = currentAccount.labels?.includes('designer') ? 'designer' : 'customer';
+
+      // Return user with role information
+      return {
+        ...currentAccount,
+        role
+      };
     } catch (error) {
       // Check specifically for the "missing scope" error for guests
       if (error instanceof AppwriteException &&
@@ -126,42 +142,6 @@ export const appwriteService = {
       return ID.unique(); // Fallback to a new ID
     }
   },
-
-  // Merge anonymous data with logged-in user data
-  // mergeAnonymousDataWithUser: async (anonymousId: string) => {
-  //   try {
-
-  //     // Get anonymous cart items
-  //     const anonCart = await databases.listDocuments(
-  //       DATABASE_ID,
-  //       'cart',
-  //       [
-  //         // Query where userOrSessionId equals anonymousId
-  //         // Replace with your actual field names
-  //         // Query.equal('userOrSessionId', anonymousId)
-  //       ]
-  //     );
-
-  //     // Get user ID after login
-  //     const currentUser = await appwriteService.getCurrentUser();
-  //     if (!currentUser) return;
-
-  //     for (const item of anonCart.documents) {
-  //       await databases.updateDocument(
-  //         DATABASE_ID,
-  //         'cart',
-  //         item.$id,
-  //         {
-  //           userOrSessionId: currentUser.$id
-  //         }
-  //       );
-  //     }
-
-  //     console.log('Anonymous session merged with user account');
-  //   } catch (error) {
-  //     console.error("Appwrite service :: mergeAnonymousDataWithUser :: error", error);
-  //   }
-  // },
 
   // Logout
   logout: async () => {
@@ -225,6 +205,56 @@ export const productService = {
       );
     } catch (error) {
       console.error("Product service :: getProductCategories :: error", error);
+      throw error;
+    }
+  },
+
+  // Create a new product
+  createProduct: async (productData: ProductCreateInput): Promise<Product> => {
+    try {
+      const response = await databases.createDocument(
+        DATABASE_ID,
+        PRODUCT_COLLECTION_ID,
+        ID.unique(),
+        productData
+      );
+      return response as Product;
+    } catch (error) {
+      console.error("Product service :: createProduct :: error", error);
+      throw error;
+    }
+  },
+
+  // Upload product image
+  uploadProductImage: async (file: File): Promise<string> => {
+    try {
+      const response = await storage.createFile(
+        PRODUCT_IMAGES_BUCKET_ID,
+        ID.unique(),
+        file
+      );
+
+      // Return the URL for the uploaded file
+      return storage.getFileView(PRODUCT_IMAGES_BUCKET_ID, response.$id).href;
+    } catch (error) {
+      console.error("Product service :: uploadProductImage :: error", error);
+      throw error;
+    }
+  },
+
+  // Upload 3D model file
+  uploadProductModel: async (file: File): Promise<string> => {
+    try {
+      const response = await storage.createFile(
+        PRODUCT_MODELS_BUCKET_ID,
+        ID.unique(),
+        file
+      );
+
+      // Return the URL for the uploaded file
+      return storage.getFileView(PRODUCT_MODELS_BUCKET_ID, response.$id).href;
+    } catch (error) {
+      console.error("Product service :: uploadProductModel :: error", error);
       throw error;
     }
   }

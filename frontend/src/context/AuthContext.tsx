@@ -9,6 +9,7 @@ type User = {
   $id: string;
   email: string;
   name: string;
+  role?: 'customer' | 'designer'; // Add role field
   // Add other fields as needed
 };
 
@@ -17,9 +18,10 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (email: string, password: string, name: string, role?: 'customer' | 'designer') => Promise<void>;
   logout: () => Promise<void>;
   checkAuthStatus: () => Promise<void>;
+  isDesigner: () => boolean; // Add function to check if user is designer
 };
 
 // Create context with default values
@@ -30,6 +32,7 @@ const AuthContext = createContext<AuthContextType>({
   signup: async () => {},
   logout: async () => {},
   checkAuthStatus: async () => {},
+  isDesigner: () => false, // Default implementation
 });
 
 // Custom hook to use the auth context
@@ -65,6 +68,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Function to check if user is a designer
+  const isDesigner = (): boolean => {
+    return user?.role === 'designer';
+  };
+
   // Login function
   const login = async (email: string, password: string): Promise<void> => {
     try {
@@ -81,10 +89,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // Signup function
-  const signup = async (email: string, password: string, name: string): Promise<void> => {
+  const signup = async (email: string, password: string, name: string, role?: 'customer' | 'designer'): Promise<void> => {
     try {
       setLoading(true);
-      await appwriteService.createAccount(email, password, name);
+      await appwriteService.createAccount(email, password, name, role);
       await checkAuthStatus();
       router.push('/');
     } catch (error) {
@@ -118,6 +126,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signup,
     logout,
     checkAuthStatus,
+    isDesigner,
   };
 
   return (

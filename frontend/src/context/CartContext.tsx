@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { appwriteService, databases } from '@/services/appwrite';
 import { useAuth } from './AuthContext';
 import { ID, Query } from 'appwrite';
+import { toast } from 'react-hot-toast';
 
 // Define cart item structure
 export type CartItem = {
@@ -25,6 +26,9 @@ type CartContextType = {
   removeFromCart: (id: string) => Promise<void>;
   clearCart: () => Promise<void>;
   isLoading: boolean;
+  lastAddedItem: CartItem | null;
+  isInCart: (productId: string) => boolean;
+  getItemQuantity: (productId: string) => number;
 };
 
 // Create context with default values
@@ -37,6 +41,9 @@ const CartContext = createContext<CartContextType>({
   removeFromCart: async () => {},
   clearCart: async () => {},
   isLoading: false,
+  lastAddedItem: null,
+  isInCart: () => false,
+  getItemQuantity: () => 0,
 });
 
 // Custom hook to use the cart context
@@ -48,6 +55,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { user } = useAuth();
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
 
   // Cart stats calculations
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
@@ -131,7 +139,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Add item to cart
+  // Add item to cart with improved feedback
   const addToCart = async (newItem: Omit<CartItem, "id">) => {
     if (!sessionId) return;
     
@@ -142,31 +150,50 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       const existingItemIndex = cartItems.findIndex(item => item.productId === newItem.productId);
       
       let updatedCart: CartItem[];
+      let addedItem: CartItem;
       
       if (existingItemIndex > -1) {
         // Update quantity if item already exists
+        const updatedQuantity = cartItems[existingItemIndex].quantity + newItem.quantity;
+        
+        // Create the updated item
+        addedItem = {
+          ...cartItems[existingItemIndex],
+          quantity: updatedQuantity
+        };
+        
+        // Update the cart
         updatedCart = cartItems.map((item, index) => 
-          index === existingItemIndex 
-            ? { ...item, quantity: item.quantity + newItem.quantity } 
-            : item
+          index === existingItemIndex ? addedItem : item
         );
+        
+        toast.success(`Updated ${addedItem.name} quantity in your cart`);
       } else {
         // Add new item to cart
-        const itemToAdd: CartItem = {
+        addedItem = {
           ...newItem,
           id: user ? ID.unique() : `local_${Date.now()}`,
         };
         
-        updatedCart = [...cartItems, itemToAdd];
+        updatedCart = [...cartItems, addedItem];
+        
+        toast.success(`${addedItem.name} added to your cart`);
       }
       
       // Update state
       setCartItems(updatedCart);
       
+      // Store the last added item for potential UI feedback
+      setLastAddedItem(addedItem);
+      
       // Save to storage
       await saveCart(updatedCart, sessionId);
+      
+      return addedItem;
     } catch (error) {
       console.error("Error adding item to cart:", error);
+      toast.error("Failed to add item to cart");
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -237,6 +264,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Check if product is in cart
+  const isInCart = (productId: string): boolean => {
+    return cartItems.some(item => item.productId === productId);
+  };
+
+  // Get item quantity in cart
+  const getItemQuantity = (productId: string): number => {
+    const item = cartItems.find(item => item.productId === productId);
+    return item ? item.quantity : 0;
+  };
+
   // Context value
   const value = {
     cartItems,
@@ -247,6 +285,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     removeFromCart,
     clearCart,
     isLoading,
+    lastAddedItem,
+    isInCart,
+    getItemQuantity
   };
 
   return (

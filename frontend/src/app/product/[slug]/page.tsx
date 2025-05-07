@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Query } from "appwrite";
@@ -14,6 +14,9 @@ import { configService } from "@/services/configService";
 import dynamic from "next/dynamic";
 import { Product } from "@/types/collections/Product";
 import { ProductCategory } from "@/types/collections/ProductCategory";
+import AddToCartButton from "@/components/cart/AddToCartButton";
+import CartNotification from "@/app/cart/CartNotification";  // Add import for CartNotification
+import WishlistButton from "@/components/wishlist/WishlistButton";
 
 // Extend Window interface to include our custom property
 declare global {
@@ -41,7 +44,9 @@ const ThreeJSModelViewer = dynamic(
 export default function ProductPage() {
   const params = useParams();
   const { slug } = params;
-  const { addToCart } = useCart();
+  const router = useRouter();
+  const cartContext = useCart();  // Store the entire cart context
+  const { addToCart } = cartContext;  // Then destructure what you need
 
   const [product, setProduct] = useState<Product | null>(null);
   const [category, setCategory] = useState<ProductCategory | null>(null);
@@ -55,6 +60,9 @@ export default function ProductPage() {
 
   // New state for product variations
   const [selectedVariation, setSelectedVariation] = useState(0);
+
+  // Add new state for navigation to cart after adding
+  const [navigateToCart, setNavigateToCart] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -170,26 +178,48 @@ export default function ProductPage() {
     }
   };
 
-  const handleAddToCart = async () => {
+  // Debugging log to check product stock quantity
+  useEffect(() => {
+    if (product) {
+      console.log("Product stock quantity:", product.stock_quantity);
+    }
+  }, [product]);
+
+  // Handle direct "Buy Now" functionality
+  const handleBuyNow = async () => {
     if (!product) return;
-
+    
+    setAddingToCart(true);
     try {
-      setAddingToCart(true);
-
+      // Get the correct price based on selected variation
+      const price = product.variation_prices 
+        ? product.variation_prices[selectedVariation]
+        : (Array.isArray(product.price) ? product.price[selectedVariation] : product.price);
+      
+      // Add to cart
       await addToCart({
         productId: product.$id,
         name: product.name,
-        price: product.price[selectedVariation],
+        price: price,
         quantity: quantity,
-        image: product.main_image_url || "",
+        image: product.main_image_url || ""
       });
-
-      toast.success(`${quantity} × ${product.name} added to your cart!`);
+      
+      // Navigate to cart page
+      router.push('/cart');
     } catch (error) {
-      console.error("Error adding to cart:", error);
-      toast.error("Failed to add item to cart. Please try again.");
+      console.error("Error during Buy Now:", error);
+      toast.error("Failed to process. Please try again.");
     } finally {
       setAddingToCart(false);
+    }
+  };
+
+  // Handle successful add to cart with optional navigation
+  const handleAddToCartSuccess = () => {
+    if (navigateToCart) {
+      router.push('/cart');
+      setNavigateToCart(false);
     }
   };
 
@@ -258,6 +288,21 @@ export default function ProductPage() {
     ...(product.additional_image_urls || []),
     ...(product.variation_images || []),
   ].filter(Boolean);
+
+  // Get the correct price based on selected variation
+  const currentPrice = product.variation_prices ? 
+    product.variation_prices[selectedVariation] : 
+    (Array.isArray(product.price) ? product.price[selectedVariation] : product.price);
+
+  // Create a product object with the selected variation
+  const productWithVariation = {
+    ...product,
+    price: currentPrice
+  };
+
+  // Set a default stock quantity if it's not defined
+  // This ensures products without explicit stock_quantity can still be added to cart
+  const stockQuantity = product.stock_quantity !== undefined ? product.stock_quantity : 10;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -354,7 +399,7 @@ export default function ProductPage() {
                 {product.name}
               </h1>
               <p className="text-2xl text-gray-900 mb-6">
-                ${product.variation_prices ? product.variation_prices[selectedVariation]?.toFixed(2) : "N/A"}
+                ${currentPrice?.toFixed(2) || "N/A"}
               </p>
 
               <div className="prose prose-amber mb-8">
@@ -398,104 +443,92 @@ export default function ProductPage() {
                 </div>
               )}
 
+              {/* Always show the quantity selector and Add to Cart button, 
+                  unless we explicitly know the product is out of stock */}
               <div className="mb-8">
-                <h2 className="font-medium mb-2">Product Details</h2>
-                <ul className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                  <li className="flex justify-between">
-                    <span className="text-gray-500">Material</span>
-                    <span>{product.material}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-500">Dimensions</span>
-                    <span>
-                      {product.dim_width}W × {product.dim_depth}D ×{" "}
-                      {product.dim_height}H cm
-                    </span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-500">Weight</span>
-                    <span>{product.weight} kg</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-500">In Stock</span>
-                    <span>{product.stock_quantity > 0 ? "Yes" : "No"}</span>
-                  </li>
-                </ul>
-              </div>
-
-              {product.stock_quantity > 0 ? (
-                <div className="mb-8">
-                  <div className="flex items-center mb-4">
-                    <span className="mr-4 font-medium">Quantity</span>
-                    <div className="flex items-center border border-gray-300 rounded-md">
-                      <button
-                        onClick={decrementQuantity}
-                        className="px-3 py-2 text-amber-800 hover:bg-gray-100"
-                        disabled={quantity <= 1}
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        min="1"
-                        max={product.stock_quantity}
-                        value={quantity}
-                        onChange={handleQuantityChange}
-                        className="w-12 text-center border-0 focus:outline-none"
-                      />
-                      <button
-                        onClick={incrementQuantity}
-                        className="px-3 py-2 text-amber-800 hover:bg-gray-100"
-                        disabled={quantity >= product.stock_quantity}
-                      >
-                        +
-                      </button>
-                    </div>
-                    <span className="ml-4 text-sm text-gray-500">
-                      {product.stock_quantity} available
-                    </span>
+                <div className="flex items-center mb-4">
+                  <span className="mr-4 font-medium">Quantity</span>
+                  <div className="flex items-center border border-gray-300 rounded-md">
+                    <button
+                      onClick={decrementQuantity}
+                      className="px-3 py-2 text-amber-800 hover:bg-gray-100"
+                      disabled={quantity <= 1}
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      max={stockQuantity}
+                      value={quantity}
+                      onChange={handleQuantityChange}
+                      className="w-12 text-center border-0 focus:outline-none"
+                    />
+                    <button
+                      onClick={incrementQuantity}
+                      className="px-3 py-2 text-amber-800 hover:bg-gray-100"
+                      disabled={quantity >= stockQuantity}
+                    >
+                      +
+                    </button>
                   </div>
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={addingToCart}
-                    className="w-full py-3 px-6 bg-amber-800 text-white font-medium rounded-md hover:bg-amber-900 transition-colors disabled:opacity-70 flex items-center justify-center"
-                  >
-                    {addingToCart ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Adding...
-                      </>
-                    ) : (
-                      "Add to Cart"
-                    )}
-                  </button>
+                  <span className="ml-4 text-sm text-gray-500">
+                    {stockQuantity} available
+                  </span>
                 </div>
-              ) : (
-                <div className="mb-8">
+                
+                {/* Add to Cart and Buy Now buttons */}
+                {stockQuantity > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <AddToCartButton 
+                      product={{
+                        ...product,
+                        price: currentPrice
+                      }}
+                      quantity={quantity}
+                      className="w-full py-3 px-6"
+                      size="lg"
+                      onSuccess={handleAddToCartSuccess}
+                    />
+                    <button
+                      onClick={handleBuyNow}
+                      disabled={addingToCart}
+                      className="w-full py-3 px-6 bg-amber-700 text-white font-medium rounded-md hover:bg-amber-800 transition-colors disabled:opacity-70 flex items-center justify-center"
+                    >
+                      {addingToCart ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Processing...
+                        </>
+                      ) : (
+                        "Buy Now"
+                      )}
+                    </button>
+                  </div>
+                ) : (
                   <p className="py-3 px-6 bg-gray-100 text-gray-500 rounded-md text-center font-medium">
                     Out of Stock
                   </p>
-                </div>
-              )}
+                )}
+                
+                {/* Optional: View Cart Button that appears briefly after adding to cart */}
+                {cartContext.cartCount > 0 && (
+                  <div className="mt-4 flex justify-end">
+                    <Link 
+                      href="/cart"
+                      className="text-amber-800 hover:underline flex items-center text-sm"
+                    >
+                      View Cart ({cartContext.cartCount} items)
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </Link>
+                  </div>
+                )}
+              </div>
 
               {/* Try in Room Designer Button */}
               {product.model_3d_url && (
@@ -515,19 +548,16 @@ export default function ProductPage() {
 
               {/* Additional action buttons */}
               <div className="flex flex-wrap gap-4">
-                <button className="text-gray-700 flex items-center gap-2 hover:text-amber-800">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    className="bi bi-heart"
-                    viewBox="0 0 16 16"
-                  >
-                    <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z" />
-                  </svg>
-                  Add to Wishlist
-                </button>
+                <WishlistButton 
+                  product={{
+                    ...product,
+                    // Ensure we're passing the current price to the WishlistButton
+                    price: currentPrice
+                  }}
+                  variant="icon-only"
+                  className="text-gray-700 flex items-center gap-2 hover:text-amber-800"
+                  showText={true} 
+                />
                 <button className="text-gray-700 flex items-center gap-2 hover:text-amber-800">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -579,42 +609,69 @@ export default function ProductPage() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {relatedProducts.map((relatedProduct) => (
-                  <Link
-                    key={relatedProduct.$id}
-                    href={`/product/${relatedProduct.slug}`}
-                  >
-                    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                      <div className="aspect-square relative">
-                        {relatedProduct.main_image_url ? (
-                          <Image
-                            src={relatedProduct.main_image_url}
-                            alt={relatedProduct.name}
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                            <span className="text-gray-400">No image</span>
+                  <div key={relatedProduct.$id} className="relative group">
+                    <Link
+                      href={`/product/${relatedProduct.slug}`}
+                      className="block"
+                    >
+                      <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div className="aspect-square relative">
+                          {relatedProduct.main_image_url ? (
+                            <Image
+                              src={relatedProduct.main_image_url}
+                              alt={relatedProduct.name}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                              <span className="text-gray-400">No image</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-medium text-gray-800 mb-2 truncate">
+                            {relatedProduct.name}
+                          </h3>
+                          <div className="flex items-center justify-between">
+                            <p className="text-gray-700">
+                              ${relatedProduct.price[0].toFixed(2)}
+                            </p>
                           </div>
-                        )}
+                        </div>
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-medium text-gray-800 mb-2">
-                          {relatedProduct.name}
-                        </h3>
-                        <p className="text-gray-700">
-                          {relatedProduct.price[0].toFixed(2)}
-                        </p>
-                      </div>
+                    </Link>
+                    
+                    {/* Add wishlist button to the related products as well */}
+                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <WishlistButton
+                        product={relatedProduct}
+                        variant="icon-only"
+                        size="sm"
+                        showText={false}
+                      />
                     </div>
-                  </Link>
+                    
+                    {/* Quick add to cart button - Make sure it's always visible on hover */}
+                    <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <AddToCartButton
+                        product={relatedProduct}
+                        variant="default"
+                        size="sm" 
+                        showText={false}
+                      />
+                    </div>
+                  </div>
                 ))}
               </div>
             </section>
           )}
         </div>
       </main>
+
+      {/* Add the CartNotification component */}
+      <CartNotification />
 
       <Footer />
     </div>
