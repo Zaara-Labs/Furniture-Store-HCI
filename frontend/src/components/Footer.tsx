@@ -42,7 +42,7 @@ export default function Footer() {
               <li><Link href="/shop" className="hover:text-amber-800 transition-colors">Shop All</Link></li>
               <li><Link href="/about" className="hover:text-amber-800 transition-colors">About Us</Link></li>
               <li><Link href="/contact" className="hover:text-amber-800 transition-colors">Contact Us</Link></li>
-              <li><Link href="/faq" className="hover:text-amber-800 transition-colors">FAQs</Link></li>
+              <li><Link href="/customization-guide" className="hover:text-amber-800 transition-colors">Customization Guide</Link></li>
               <li><Link href="/shipping" className="hover:text-amber-800 transition-colors">Shipping & Returns</Link></li>
               <li><Link href="/privacy" className="hover:text-amber-800 transition-colors">Privacy Policy</Link></li>
             </ul>
