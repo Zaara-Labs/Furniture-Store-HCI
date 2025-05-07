@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import * as THREE from 'three';
+import { OrbitControls as StdLibOrbitControls } from 'three-stdlib';
 import Navbar from '@/components/Navbar';
 import RoomCanvas from '@/components/room-designer/RoomCanvas';
 import ProductCatalog from '@/components/room-designer/ProductCatalog';
@@ -60,7 +62,7 @@ export default function DesignerPage() {
         }
       });
     }
-  }, [projectId, user]);
+  }, [projectId, user, loadProject]);
 
   // Handle save project
   const handleSaveProject = async () => {
@@ -193,9 +195,9 @@ export default function DesignerPage() {
           camera={camera}
           products={products}
           selectedItemIndex={selectedItemIndex}
+          cameraRef={cameraRef as React.RefObject<THREE.PerspectiveCamera>}
+          controlsRef={controlsRef as unknown as React.RefObject<StdLibOrbitControls>}
           draggingEnabled={draggingEnabled}
-          cameraRef={cameraRef}
-          controlsRef={controlsRef}
           onUpdateRoom={updateRoomDimensions}
           onUpdateCamera={updateCamera}
           onSelectFurniture={selectFurniture}

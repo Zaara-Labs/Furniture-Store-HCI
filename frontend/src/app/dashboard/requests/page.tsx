@@ -62,6 +62,9 @@ export default function CustomerRequests() {
     // If not loading and no user, redirect to login
     if (!loading && !user) {
       router.push('/auth/login?redirect=/dashboard/requests');
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
     }
   }, [loading, user, router]);
 
@@ -70,13 +73,28 @@ export default function CustomerRequests() {
     ? requests 
     : requests.filter(request => request.status.toLowerCase() === filterStatus.toLowerCase());
 
-  const markAsRead = (id) => {
-    setRequests(prev => prev.map(request => 
+  // Define interface for customer requests
+  interface CustomerRequest {
+    id: string;
+    client: string;
+    email: string;
+    requestType: string;
+    status: string;
+    message: string;
+    date: string;
+    isRead: boolean;
+  }
+
+  const markAsRead = (id: string): void => {
+    setRequests((prev: CustomerRequest[]) => prev.map(request => 
       request.id === id ? { ...request, isRead: true } : request
     ));
   };
 
-  const getStatusBadge = (status) => {
+  /**
+   * Returns CSS class names for request status badges
+   */
+  const getStatusBadge = (status: string): string => {
     switch(status.toLowerCase()) {
       case 'new':
         return 'bg-blue-100 text-blue-800';
@@ -89,7 +107,7 @@ export default function CustomerRequests() {
     }
   };
 
-  const getRequestTypeBadge = (type) => {
+  const getRequestTypeBadge = (type: string) => {
     switch(type.toLowerCase()) {
       case 'design consultation':
         return 'bg-purple-100 text-purple-800';

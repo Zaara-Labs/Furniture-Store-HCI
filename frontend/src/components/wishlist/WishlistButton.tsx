@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useWishlist } from "@/context/WishlistContext";
-import { toast } from "react-hot-toast";
 import { Product } from "@/types/collections/Product";
 
 interface WishlistButtonProps {
@@ -72,7 +71,7 @@ export default function WishlistButton({
           name: product.name,
           price: price,
           image: product.main_image_url || "",
-          slug: product.slug,
+          slug: product.slug || "",
         });
       }
       

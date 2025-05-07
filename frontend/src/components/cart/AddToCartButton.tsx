@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { toast } from "react-hot-toast";
 import { Product } from "@/types/collections/Product";
-import { is } from "date-fns/locale";
 
 interface AddToCartButtonProps {
   product: Product;

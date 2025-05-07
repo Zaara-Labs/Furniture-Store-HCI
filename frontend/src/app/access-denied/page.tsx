@@ -12,7 +12,7 @@ export default function AccessDenied() {
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Access Denied</h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            You don't have permission to access this page.
+            You don&apos;t have permission to access this page.
           </p>
         </div>
         <div className="mt-8 space-y-4">

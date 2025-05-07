@@ -22,7 +22,7 @@ if (!APPWRITE_PROJECT_ID) {
 // Configure client
 client
   .setEndpoint(APPWRITE_ENDPOINT)
-  .setProject(APPWRITE_PROJECT_ID);
+  .setProject(APPWRITE_PROJECT_ID || "");
 
 // Initialize Account
 const account = new Account(client);
@@ -68,7 +68,7 @@ export const getUserOrSessionId = async () => {
 // Authentication functions
 export const appwriteService = {
   // Create a new account
-  createAccount: async (email: string, password: string, name: string, role: 'customer' | 'designer' = 'customer') => {
+  createAccount: async (email: string, password: string, name: string) => {
     try {
       const userId = ID.unique();
       const newAccount = await account.create(

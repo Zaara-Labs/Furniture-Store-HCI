@@ -38,15 +38,13 @@ export default function AddProductPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState<{$id: string, name: string}[]>([]);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   
   // Initialize form with react-hook-form
   const { 
     register, 
     control, 
     handleSubmit, 
-    formState: { errors }, 
-    setValue, 
+    formState: { errors },
     watch 
   } = useForm<ProductFormData>({
     defaultValues: {
@@ -76,14 +74,15 @@ export default function AddProductPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        setIsLoading(true);
         const response = await productService.getProductCategories();
-        setCategories(response.documents as {$id: string, name: string}[]);
+        const formattedCategories = response.documents.map(doc => ({
+          $id: doc.$id,
+          name: doc.name as string
+        }));
+        setCategories(formattedCategories);
       } catch (error) {
         console.error('Error fetching categories:', error);
         toast.error('Failed to load product categories');
-      } finally {
-        setIsLoading(false);
       }
     };
     

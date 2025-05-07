@@ -209,7 +209,7 @@ export const cartService = {
       const variantIndexes = cart.variant_indexes || [];
 
       // Find product with matching product ID and variant index
-      const productIndex = products.findIndex((p: any, idx: number) =>
+      const productIndex = products.findIndex((p: string, idx: number) =>
         p === productId && variantIndexes[idx] === Number(variantIndex)
       );
 
@@ -256,7 +256,7 @@ export const cartService = {
       let variantIndexes = cart.variant_indexes || [];
 
       // Find product with matching product ID and variant index
-      const productIndex = products.findIndex((p: any, idx: number) =>
+      const productIndex = products.findIndex((p: string, idx: number) =>
         p === productId && variantIndexes[idx] === Number(variantIndex)
       );
 

@@ -307,12 +307,6 @@ export default function ProductPage() {
     product.variation_prices[selectedVariation] : 
     (Array.isArray(product.price) ? product.price[selectedVariation] : product.price);
 
-  // Create a product object with the selected variation
-  const productWithVariation = {
-    ...product,
-    price: currentPrice
-  };
-
   // Set a default stock quantity if it's not defined
   // This ensures products without explicit stock_quantity can still be added to cart
   const stockQuantity = product.stock_quantity !== undefined ? product.stock_quantity : 10;

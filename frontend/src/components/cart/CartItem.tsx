@@ -42,7 +42,7 @@ export default function CartItem({ id, productId, name, price, quantity, image, 
   };
 
   return (
-    <div className="flex items-center py-6 border-b border-gray-200">
+    <div className="flex items-center py-6 border-b border-gray-200" key={`${id}-${productId}`}>
       <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 relative">
         {image ? (
           <Image
