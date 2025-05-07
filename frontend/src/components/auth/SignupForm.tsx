@@ -138,39 +138,7 @@ export default function SignupForm() {
           <p className="mt-1 text-red-600 text-sm">{errors.confirmPassword.message}</p>
         )}
       </div>
-      
-      <div>
-        <label className="block text-gray-700 font-medium mb-2">
-          Account Type
-        </label>
-        <div className="flex gap-4">
-          <div className="flex items-center">
-            <input
-              id="customer"
-              type="radio"
-              value="customer"
-              {...register('role')}
-              className="h-4 w-4 text-amber-800 focus:ring-amber-800 border-gray-300"
-            />
-            <label htmlFor="customer" className="ml-2 block text-sm text-gray-700">
-              Customer
-            </label>
-          </div>
-          <div className="flex items-center">
-            <input
-              id="designer"
-              type="radio"
-              value="designer"
-              {...register('role')}
-              className="h-4 w-4 text-amber-800 focus:ring-amber-800 border-gray-300"
-            />
-            <label htmlFor="designer" className="ml-2 block text-sm text-gray-700">
-              Designer
-            </label>
-          </div>
-        </div>
-      </div>
-      
+
       <div className="flex items-center">
         <input
           id="terms"

@@ -62,8 +62,6 @@ export const appwriteService = {
       );
 
       if (newAccount) {
-        // Add role as a label to the user account instead of creating a separate document
-        await account.updateLabels(userId, [role]);
 
         // Login immediately after successful signup
         return await appwriteService.login(email, password);
