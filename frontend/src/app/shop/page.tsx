@@ -257,9 +257,9 @@ function ShopContent() {
                 <Link key={product.$id} href={`/product/${product.slug}`}>
                   <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
                     <div className="aspect-square relative">
-                      {product.main_image_url ? (
+                      {product.main_image_url || (product.variation_images && product.variation_images.length > 0) ? (
                         <Image
-                          src={product.main_image_url}
+                          src={(product.main_image_url || product.variation_images?.[0])!}
                           alt={product.name}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
