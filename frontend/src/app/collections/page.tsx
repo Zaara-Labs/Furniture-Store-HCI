@@ -198,17 +198,21 @@ function CollectionsContent() {
             <motion.div key={collection.$id} variants={itemVariants}>
               <Link href={`/shop?collection=${collection.slug}`}>
                 <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group">
-                  <div className="aspect-[4/3] relative bg-gray-100">
-                    <Image 
-                      src={collection.image || defaultImages[index % defaultImages.length]} 
-                      alt={collection.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-700"
-                      priority={index < 2}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/70 transition-all"></div>
-                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <div className="aspect-[4/3] relative bg-gray-100 overflow-hidden">
+                    {/* Container that holds both image and overlay - apply the scaling effect here */}
+                    <div className="absolute inset-0 group-hover:scale-105 transition-transform duration-700">
+                      <Image 
+                        src={collection.image || defaultImages[index % defaultImages.length]} 
+                        alt={collection.name}
+                        fill
+                        className="object-cover"
+                        priority={index < 2}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/70 transition-all"></div>
+                    </div>
+                    
+                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white z-10">
                       <h3 className="text-2xl font-medium mb-2">{collection.name}</h3>
                       {collection.description && (
                         <p className="text-sm text-white text-opacity-90">{collection.description}</p>
