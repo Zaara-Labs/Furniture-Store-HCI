@@ -42,7 +42,7 @@ export default function AboutPage() {
             >
               <Image 
                 src={image} 
-                alt={`About Pneumetra Furniture ${index + 1}`} 
+                alt={`About FABRIQUÉ Furniture ${index + 1}`} 
                 fill
                 className="object-cover opacity-60"
                 priority={index === 0}
@@ -104,7 +104,7 @@ export default function AboutPage() {
               >
                 <Image 
                   src="/images/about/mission.jpg" 
-                  alt="Pneumetra Workshop" 
+                  alt="FABRIQUÉ Workshop" 
                   fill
                   className="object-cover"
                 />
@@ -187,7 +187,7 @@ export default function AboutPage() {
             >
               <h2 className="text-3xl font-serif font-medium mb-4">Meet Our Team</h2>
               <p className="max-w-3xl mx-auto text-gray-600">
-                The passionate individuals behind Pneumetra who bring creativity, expertise, and dedication to every project.
+                The passionate individuals behind FABRIQUÉ who bring creativity, expertise, and dedication to every project.
               </p>
             </motion.div>
             
@@ -243,7 +243,7 @@ export default function AboutPage() {
                   Located in the heart of the city, our workshop is where creativity meets craftsmanship. It&apos;s a space where our team of skilled artisans bring designs to life, transforming raw materials into beautiful, functional pieces.
                 </p>
                 <p className="text-gray-700 mb-4 leading-relaxed">
-                  We welcome visitors to tour our workshop, observe our craftspeople at work, and gain insight into our meticulous creation process. It&apos;s an opportunity to witness firsthand the care and precision that goes into each piece of Pneumetra furniture.
+                  We welcome visitors to tour our workshop, observe our craftspeople at work, and gain insight into our meticulous creation process. It&apos;s an opportunity to witness firsthand the care and precision that goes into each piece of FABRIQUÉ furniture.
                 </p>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
@@ -263,7 +263,7 @@ export default function AboutPage() {
               >
                 <Image 
                   src="/images/about/workshop.jpg" 
-                  alt="Pneumetra Workshop" 
+                  alt="FABRIQUÉ Workshop" 
                   fill
                   className="object-cover"
                 />
@@ -281,7 +281,7 @@ export default function AboutPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
             >
-              <h2 className="text-3xl font-serif font-medium mb-6">Experience the Pneumetra Difference</h2>
+              <h2 className="text-3xl font-serif font-medium mb-6">Experience the FABRIQUÉ Difference</h2>
               <p className="max-w-2xl mx-auto mb-8 text-amber-50">
                 Discover our collection of thoughtfully designed furniture pieces crafted to elevate your home.
               </p>

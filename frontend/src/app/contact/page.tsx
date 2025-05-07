@@ -18,7 +18,7 @@ export default function ContactPage() {
           <div className="absolute inset-0">
             <Image 
               src="/images/landing/hero2.jpg" 
-              alt="Contact Pneumetra Furniture" 
+              alt="Contact FABRIQUÉ Furniture" 
               fill
               className="object-cover opacity-60"
               priority

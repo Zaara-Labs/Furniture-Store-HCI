@@ -9,7 +9,7 @@ export default function TestimonialSection() {
       id: 1,
       name: "Emma Thompson",
       location: "New York, NY",
-      quote: "The craftsmanship of every piece I've purchased is exceptional. Pneumetra has transformed my living space completely.",
+      quote: "The craftsmanship of every piece I've purchased is exceptional. FABRIQUÉ has transformed my living space completely.",
       image: "/images/testimonial/1.jpg"
     },
     {
@@ -23,14 +23,14 @@ export default function TestimonialSection() {
       id: 3,
       name: "Sarah Johnson",
       location: "Chicago, IL",
-      quote: "I've furnished my entire apartment with pieces from Pneumetra. The quality is unmatched and the designs are timeless.",
+      quote: "I've furnished my entire apartment with pieces from FABRIQUÉ. The quality is unmatched and the designs are timeless.",
       image: "/images/testimonial/3.jpg"
     },
     {
       id: 4,
       name: "Michael Rodriguez",
       location: "Austin, TX",
-      quote: "The attention to detail in each piece is remarkable. I'm so happy with my new dining set from Pneumetra.",
+      quote: "The attention to detail in each piece is remarkable. I'm so happy with my new dining set from FABRIQUÉ.",
       image: "/images/testimonial/4.jpg"
     },
     {
