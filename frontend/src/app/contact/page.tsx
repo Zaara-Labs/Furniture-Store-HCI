@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import Link from "next/link";
+//import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -24,7 +24,7 @@ export default function ContactPage() {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center mx-auto px-6">
               <h1 className="text-4xl md:text-5xl font-serif font-medium text-white mb-4">Contact Us</h1>
-              <p className="text-xl text-white max-w-2xl">We'd love to hear from you</p>
+              <p className="text-xl text-white max-w-2xl">We&apos;d love to hear from you</p>
             </div>
           </div>
         </section>
@@ -97,7 +97,7 @@ export default function ContactPage() {
                       className="h-4 w-4 text-amber-800 focus:ring-amber-800 border-gray-300 rounded mt-1"
                     />
                     <label htmlFor="newsletter" className="ml-2 text-sm text-gray-600">
-                      I'd like to receive updates about new products, promotions, and design tips
+                      I&apos;d like to receive updates about new products, promotions, and design tips
                     </label>
                   </div>
                   
@@ -111,7 +111,7 @@ export default function ContactPage() {
               </div>
               
               {/* Contact Information */}
-              <div className="lg:w-1/3 bg-gray-50 p-8 rounded-lg self-start">
+              <div className="lg:w-1/3 bg-gray-100 p-8 rounded-lg self-start">
                 <h3 className="text-xl font-medium mb-6">Contact Information</h3>
                 
                 <div className="space-y-6">
@@ -125,9 +125,9 @@ export default function ContactPage() {
                     <div>
                       <h4 className="font-medium mb-1">Visit Our Showroom</h4>
                       <p className="text-gray-600">
-                        123 Furniture Avenue<br />
-                        Design District<br />
-                        New York, NY 10001
+                        120/8,<br /> Furniture Avenue,<br />
+                        Design District,<br />
+                        Colombo, SL 10001.
                       </p>
                     </div>
                   </div>
@@ -140,7 +140,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h4 className="font-medium mb-1">Phone</h4>
-                      <p className="text-gray-600">(555) 123-4567</p>
+                      <p className="text-gray-600">(+94) 077-123-4567</p>
                       <p className="text-sm text-gray-500 mt-1">Mon-Fri: 9am - 6pm</p>
                       <p className="text-sm text-gray-500">Sat: 10am - 4pm</p>
                     </div>
@@ -154,8 +154,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h4 className="font-medium mb-1">Email</h4>
-                      <p className="text-gray-600">info@pneumetra.com</p>
-                      <p className="text-sm text-gray-500 mt-1">We'll respond within 24 hours</p>
+                      <p className="text-gray-600">info@fabrique.com</p>
+                      <p className="text-sm text-gray-500 mt-1">We&apos;ll respond within 24 hours</p>
                     </div>
                   </div>
                 </div>
@@ -202,15 +202,15 @@ export default function ContactPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-xl font-medium mb-3">New York</h3>
+                <h3 className="text-xl font-medium mb-3">Kandy</h3>
                 <p className="text-gray-600 mb-4">
-                  123 Furniture Avenue<br />
-                  Design District<br />
-                  New York, NY 10001
+                  123, Furniture Avenue,<br />
+                  Design District,<br />
+                  Kandy, SL 10001.
                 </p>
                 <div className="h-60 relative rounded-lg overflow-hidden mb-4">
                   <Image 
-                    src="/images/landing_collection/living.jpg" 
+                    src="/images/contact/1.jpg" 
                     alt="New York Showroom" 
                     fill
                     className="object-cover"
@@ -226,7 +226,7 @@ export default function ContactPage() {
                   href="https://maps.google.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-amber-800 font-medium hover:underline inline-flex items-center"
+                  className="text-amber-800 font-medium transition-all duration-300 hover:translate-x-1 inline-flex items-center"
                 >
                   Get Directions
                   <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -236,15 +236,15 @@ export default function ContactPage() {
               </div>
               
               <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-xl font-medium mb-3">San Francisco</h3>
+                <h3 className="text-xl font-medium mb-3">Gampaha</h3>
                 <p className="text-gray-600 mb-4">
-                  456 Modern Lane<br />
-                  Marina District<br />
-                  San Francisco, CA 94123
+                  456, Modern Lane,<br />
+                  Marina District,<br />
+                  Gampaha, CA 94123.
                 </p>
                 <div className="h-60 relative rounded-lg overflow-hidden mb-4">
                   <Image 
-                    src="/images/landing_collection/dining.jpg" 
+                    src="/images/contact/2.jpg" 
                     alt="San Francisco Showroom" 
                     fill
                     className="object-cover"
@@ -253,13 +253,14 @@ export default function ContactPage() {
                 <p className="text-sm text-gray-500 mb-3">
                   <span className="font-medium">Opening Hours:</span><br />
                   Mon-Fri: 10am - 7pm<br />
-                  Sat-Sun: 11am - 5pm
+                  Sat-Sun: 11am - 5pm<br />
+                  Sun: Closed
                 </p>
                 <a
                   href="https://maps.google.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-amber-800 font-medium hover:underline inline-flex items-center"
+                  className="text-amber-800 font-medium transition-all duration-300 hover:translate-x-1 inline-flex items-center"
                 >
                   Get Directions
                   <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -269,15 +270,15 @@ export default function ContactPage() {
               </div>
               
               <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-xl font-medium mb-3">Chicago</h3>
+                <h3 className="text-xl font-medium mb-3">Colombo</h3>
                 <p className="text-gray-600 mb-4">
-                  789 Furniture Plaza<br />
-                  River North<br />
-                  Chicago, IL 60654
+                  789, Furniture Plaza,<br />
+                  River North,<br />
+                  Colombo, IL 60654.
                 </p>
                 <div className="h-60 relative rounded-lg overflow-hidden mb-4">
                   <Image 
-                    src="/images/landing_collection/office.jpg" 
+                    src="/images/contact/3.jpg" 
                     alt="Chicago Showroom" 
                     fill
                     className="object-cover"
@@ -293,7 +294,7 @@ export default function ContactPage() {
                   href="https://maps.google.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-amber-800 font-medium hover:underline inline-flex items-center"
+                  className="text-amber-800 font-medium transition-all duration-300 hover:translate-x-1 inline-flex items-center"
                 >
                   Get Directions
                   <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -316,28 +317,28 @@ export default function ContactPage() {
             </div>
             
             <div className="max-w-3xl mx-auto space-y-6">
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-100 p-6 rounded-lg">
                 <h3 className="text-xl font-medium mb-3">Do you offer interior design services?</h3>
                 <p className="text-gray-600">
                   Yes, we offer comprehensive interior design services. Our team of experienced designers can help you create a cohesive look for your space, from furniture selection to color schemes and accessories. Contact us to schedule a consultation.
                 </p>
               </div>
               
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-100 p-6 rounded-lg">
                 <h3 className="text-xl font-medium mb-3">What is your delivery policy?</h3>
                 <p className="text-gray-600">
                   We offer delivery within a 50-mile radius of our showrooms. For standard-sized items, delivery typically takes 1-2 weeks. Custom pieces may require 6-8 weeks. Our delivery team will contact you to schedule a convenient delivery window.
                 </p>
               </div>
               
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-100 p-6 rounded-lg">
                 <h3 className="text-xl font-medium mb-3">Can I customize furniture pieces?</h3>
                 <p className="text-gray-600">
                   Absolutely! We pride ourselves on offering customizable furniture. You can select from a variety of fabrics, finishes, and dimensions for most of our pieces. Visit our showroom to explore the options or contact our design team for assistance.
                 </p>
               </div>
               
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-100 p-6 rounded-lg">
                 <h3 className="text-xl font-medium mb-3">What is your return policy?</h3>
                 <p className="text-gray-600">
                   We offer a 30-day return policy for stock items in original condition. Custom pieces are non-returnable. Please inspect all furniture upon delivery and notify us immediately of any issues. A 15% restocking fee may apply to returns.
@@ -347,10 +348,10 @@ export default function ContactPage() {
             
             <div className="text-center mt-10">
               <p className="text-gray-600 mb-4">
-                Don't see your question here? Contact our customer service team.
+                Don&apos;t see your question here? Contact our customer service team.
               </p>
               <a
-                href="mailto:info@pneumetra.com"
+                href="mailto:info@fabrique.com"
                 className="inline-block px-8 py-3 bg-amber-800 text-white font-medium rounded-md hover:bg-amber-900 transition-colors"
               >
                 Email Customer Service
