@@ -7,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export default function CustomizationGuidePage() {
-  const [selectedCategory, setSelectedCategory] = useState("wood");
+  const [selectedCategory, setSelectedCategory] = useState<"wood" | "fabric" | "leather" | "finish">("wood");
   const [selectedWoodType, setSelectedWoodType] = useState("oak");
   const [selectedFabricType, setSelectedFabricType] = useState("cotton");
   const [selectedLeatherType, setSelectedLeatherType] = useState("full-grain");
@@ -151,7 +151,7 @@ export default function CustomizationGuidePage() {
   ];
 
   // Color palette options
-  const colorPalettes = {
+  const colorPalettes: Record<"wood" | "fabric" | "leather", string[]> = {
     wood: ["#8B4513", "#A0522D", "#D2B48C", "#DEB887", "#F5DEB3", "#4B3621"],
     fabric: ["#F5F5DC", "#E6E6FA", "#B0C4DE", "#D3D3D3", "#FFE4E1", "#F0F8FF"],
     leather: ["#8B4513", "#A52A2A", "#D2691E", "#F5F5DC", "#000000", "#F5F5F5"]
@@ -398,7 +398,7 @@ export default function CustomizationGuidePage() {
                     <div className="mt-6">
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Available Colors</h4>
                       <div className="flex flex-wrap gap-2">
-                        {colorPalettes[selectedCategory === "finish" ? "wood" : selectedCategory]?.map((color, index) => (
+                        {colorPalettes[selectedCategory === "finish" ? "wood" : selectedCategory as "wood" | "fabric" | "leather"]?.map((color: string, index: number) => (
                           <button 
                             key={index}
                             onClick={() => setSelectedColor(color)}
@@ -599,35 +599,35 @@ export default function CustomizationGuidePage() {
               <h2 className="text-3xl font-serif font-medium mb-8 text-center">Frequently Asked Questions</h2>
               
               <div className="space-y-6">
-                <div className="bg-gray-50 p-6 rounded-lg">
+                <div className="bg-gray-100 p-6 rounded-lg">
                   <h3 className="text-lg font-medium mb-3">How long does a custom piece take to make?</h3>
                   <p className="text-gray-700">
                     Custom furniture typically takes 6-8 weeks to craft, depending on the complexity of the design and current order volume. We&apos;ll provide you with a specific timeline when you place your order.
                   </p>
                 </div>
                 
-                <div className="bg-gray-50 p-6 rounded-lg">
+                <div className="bg-gray-100 p-6 rounded-lg">
                   <h3 className="text-lg font-medium mb-3">Can I request material samples before ordering?</h3>
                   <p className="text-gray-700">
                     Yes! We offer sample kits that include swatches of our fabrics, leather samples, and wood finish options. You can order a kit online or visit one of our showrooms to see them in person.
                   </p>
                 </div>
                 
-                <div className="bg-gray-50 p-6 rounded-lg">
+                <div className="bg-gray-100 p-6 rounded-lg">
                   <h3 className="text-lg font-medium mb-3">Are there any limitations to customization?</h3>
                   <p className="text-gray-700">
                     While we offer extensive customization options, there are some structural limitations based on design integrity and material properties. Our design consultants will guide you through what&apos;s possible with your chosen piece.
                   </p>
                 </div>
                 
-                <div className="bg-gray-50 p-6 rounded-lg">
+                <div className="bg-gray-100 p-6 rounded-lg">
                   <h3 className="text-lg font-medium mb-3">What if I&apos;m not happy with my custom piece?</h3>
                   <p className="text-gray-700">
                     We want you to be completely satisfied with your purchase. If your piece doesn&apos;t meet your expectations due to a manufacturing defect, we&apos;ll work with you to resolve the issue. Custom orders cannot be returned due to their unique nature, but we&apos;ll do everything possible to ensure you&apos;re happy with the final product.
                   </p>
                 </div>
                 
-                <div className="bg-gray-50 p-6 rounded-lg">
+                <div className="bg-gray-100 p-6 rounded-lg">
                   <h3 className="text-lg font-medium mb-3">Can I customize existing furniture I already own?</h3>
                   <p className="text-gray-700">
                     Yes, we offer reupholstery and refinishing services for select furniture pieces, including those not originally purchased from us. Contact our customer service team for a consultation and quote.
