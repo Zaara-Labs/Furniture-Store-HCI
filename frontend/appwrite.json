@@ -262,11 +262,13 @@
         },
         {
             "$id": "67f7d9a80003dd74b3d3",
-            "$permissions": [],
+            "$permissions": [
+                "read(\"any\")"
+            ],
             "databaseId": "67f5616b000b636218db",
             "name": "collection",
             "enabled": true,
-            "documentSecurity": false,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "name",
@@ -301,11 +303,15 @@
         },
         {
             "$id": "681acbd00005fcf4b221",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")"
+            ],
             "databaseId": "67f5616b000b636218db",
             "name": "cart",
             "enabled": true,
-            "documentSecurity": false,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "userId",
@@ -314,18 +320,6 @@
                     "array": false,
                     "size": 20,
                     "default": null
-                },
-                {
-                    "key": "products",
-                    "type": "relationship",
-                    "required": false,
-                    "array": false,
-                    "relatedCollection": "67f69b00000c211cf835",
-                    "relationType": "manyToMany",
-                    "twoWay": false,
-                    "twoWayKey": "681accc1000e28aecd7c",
-                    "onDelete": "setNull",
-                    "side": "parent"
                 },
                 {
                     "key": "quantities",
@@ -351,6 +345,23 @@
                     "array": false,
                     "format": "",
                     "default": null
+                },
+                {
+                    "key": "variant_indexes",
+                    "type": "integer",
+                    "required": false,
+                    "array": true,
+                    "min": 0,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "products",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 20,
+                    "default": null
                 }
             ],
             "indexes": [
@@ -369,11 +380,16 @@
         },
         {
             "$id": "681acfaa00300e79201f",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"label:designer\")",
+                "read(\"label:designer\")",
+                "update(\"label:designer\")",
+                "delete(\"label:designer\")"
+            ],
             "databaseId": "67f5616b000b636218db",
             "name": "design_projects",
             "enabled": true,
-            "documentSecurity": false,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "name",
@@ -433,7 +449,7 @@
                     "type": "string",
                     "required": false,
                     "array": false,
-                    "size": 75,
+                    "size": 100,
                     "default": null
                 },
                 {
@@ -441,7 +457,7 @@
                     "type": "string",
                     "required": false,
                     "array": false,
-                    "size": 70,
+                    "size": 200,
                     "default": null
                 },
                 {
@@ -449,11 +465,71 @@
                     "type": "string",
                     "required": false,
                     "array": false,
-                    "size": 1000,
+                    "size": 10000,
                     "default": null
                 },
                 {
                     "key": "createdAt",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                },
+                {
+                    "key": "updated_at",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                }
+            ],
+            "indexes": []
+        },
+        {
+            "$id": "681b065b00072d600e69",
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
+            ],
+            "databaseId": "67f5616b000b636218db",
+            "name": "wishlist",
+            "enabled": true,
+            "documentSecurity": true,
+            "attributes": [
+                {
+                    "key": "userId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 20,
+                    "default": null
+                },
+                {
+                    "key": "products",
+                    "type": "relationship",
+                    "required": false,
+                    "array": false,
+                    "relatedCollection": "67f69b00000c211cf835",
+                    "relationType": "manyToMany",
+                    "twoWay": false,
+                    "twoWayKey": "wishlist",
+                    "onDelete": "setNull",
+                    "side": "parent"
+                },
+                {
+                    "key": "products_added_at",
+                    "type": "datetime",
+                    "required": false,
+                    "array": true,
+                    "format": "",
+                    "default": null
+                },
+                {
+                    "key": "created_at",
                     "type": "datetime",
                     "required": false,
                     "array": false,
@@ -476,7 +552,9 @@
         {
             "$id": "67f801cc00070efc4e4e",
             "$permissions": [
-                "read(\"any\")"
+                "read(\"any\")",
+                "read(\"guests\")",
+                "read(\"users\")"
             ],
             "fileSecurity": true,
             "name": "product-images",
@@ -532,8 +610,14 @@
         },
         {
             "$id": "681ae81f0008111016d3",
-            "$permissions": [],
-            "fileSecurity": false,
+            "$permissions": [
+                "create(\"label:designer\")",
+                "read(\"label:designer\")",
+                "update(\"label:designer\")",
+                "delete(\"label:designer\")",
+                "read(\"any\")"
+            ],
+            "fileSecurity": true,
             "name": "design-project-thumbnails",
             "enabled": true,
             "maximumFileSize": 5000000000,
