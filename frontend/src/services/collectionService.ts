@@ -1,7 +1,6 @@
 import { ID, Query } from 'appwrite';
-import { client as appwriteClient, databases } from './appwrite';
+import { databases } from './appwrite';
 import { Collection } from '@/types/collections/Collection';
-import { configService } from './configService';
 
 const DATABASE_ID = '67f5616b000b636218db';
 const COLLECTION_ID = '67f7d9a80003dd74b3d3';

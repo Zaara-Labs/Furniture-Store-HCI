@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Collection } from '@/types/collections/Collection';
@@ -32,9 +31,6 @@ export default function CollectionsPage() {
 
 // Collections content component that handles data fetching
 function CollectionsContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
