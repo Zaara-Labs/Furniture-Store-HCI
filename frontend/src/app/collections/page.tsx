@@ -204,9 +204,10 @@ function CollectionsContent() {
                       alt={collection.name}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-700"
+                      priority={index < 2}
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
-                    <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-30 transition-all"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/70 transition-all"></div>
                     <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
                       <h3 className="text-2xl font-medium mb-2">{collection.name}</h3>
                       {collection.description && (
