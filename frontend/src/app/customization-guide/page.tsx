@@ -178,7 +178,7 @@ export default function CustomizationGuidePage() {
         <Navbar />
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="relative h-[40vh] bg-gray-900 mt-[72px]">
+        <section className="relative h-[40vh] bg-gray-900 mt-[65px]">
           <div className="absolute inset-0">
             <Image 
               src="/images/landing/interior.jpg" 
