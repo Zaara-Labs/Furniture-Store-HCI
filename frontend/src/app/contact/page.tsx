@@ -58,41 +58,18 @@ export default function ContactPage() {
           </motion.div>
         </section>
         
-        {/* Contact Form and Info Section */}
+        {/* Contact Form Section */}
         <section className="py-20 bg-white">
           <div className="container mx-auto px-6">
             <div className="flex flex-col lg:flex-row gap-12">
               {/* Contact Form */}
-              <motion.div 
-                className="lg:w-2/3"
-                initial={{ opacity: 0, x: -40 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.7 }}
-              >
-                <motion.h2 
-                  className="text-3xl font-serif font-medium mb-8"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5 }}
-                >
+              <div className="lg:w-2/3">
+                <h2 className="text-3xl font-serif font-medium mb-8">
                   Get in Touch
-                </motion.h2>
-                <motion.form 
-                  className="space-y-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.7, delay: 0.2 }}
-                >
+                </h2>
+                <form className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: 0.3 }}
-                    >
+                    <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                         Full Name
                       </label>
@@ -103,13 +80,8 @@ export default function ContactPage() {
                         placeholder="Your name"
                         required
                       />
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: 0.4 }}
-                    >
+                    </div>
+                    <div>
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                         Email Address
                       </label>
@@ -120,15 +92,10 @@ export default function ContactPage() {
                         placeholder="Your email"
                         required
                       />
-                    </motion.div>
+                    </div>
                   </div>
                   
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.5 }}
-                  >
+                  <div>
                     <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
                       Subject
                     </label>
@@ -139,14 +106,9 @@ export default function ContactPage() {
                       placeholder="How can we help you?"
                       required
                     />
-                  </motion.div>
+                  </div>
                   
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.6 }}
-                  >
+                  <div>
                     <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
                       Message
                     </label>
@@ -157,15 +119,9 @@ export default function ContactPage() {
                       placeholder="Tell us more about your inquiry..."
                       required
                     ></textarea>
-                  </motion.div>
+                  </div>
                   
-                  <motion.div 
-                    className="flex items-start"
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.7 }}
-                  >
+                  <div className="flex items-start">
                     <input
                       id="newsletter"
                       type="checkbox"
@@ -174,22 +130,16 @@ export default function ContactPage() {
                     <label htmlFor="newsletter" className="ml-2 text-sm text-gray-600">
                       I&apos;d like to receive updates about new products, promotions, and design tips
                     </label>
-                  </motion.div>
+                  </div>
                   
-                  <motion.button
+                  <button
                     type="submit"
                     className="px-8 py-3 bg-amber-800 text-white font-medium rounded-md hover:bg-amber-900 transition-colors"
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.8 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                   >
                     Send Message
-                  </motion.button>
-                </motion.form>
-              </motion.div>
+                  </button>
+                </form>
+              </div>
               
               {/* Contact Information */}
               <motion.div 
