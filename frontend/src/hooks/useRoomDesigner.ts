@@ -5,7 +5,9 @@ import { productService } from '@/services/appwrite';
 import { RoomSettings, FurnitureItemProps, CameraSettings } from '@/types/room-designer';
 import { Product } from '@/types/collections/Product';
 import { getUnitConversionFactor } from '@/utils/roomUtils';
-import designProjectService, { DesignProject, ParsedDesignProject } from '@/services/designProjectService';
+import designProjectService, { ParsedDesignProject } from '@/services/designProjectService';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 // Helper to generate UUID
 const generateUUID = () => {
@@ -34,10 +36,10 @@ export function useRoomDesigner() {
 
   // Project state
   const [currentProject, setCurrentProject] = useState<ParsedDesignProject | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
 
   // Furniture state
   const [furniture, setFurniture] = useState<FurnitureItemProps[]>([]);

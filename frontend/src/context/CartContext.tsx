@@ -1,9 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { appwriteService, databases } from '@/services/appwrite';
+import { appwriteService } from '@/services/appwrite';
+import { cartService } from '@/services/cartService';
 import { useAuth } from './AuthContext';
-import { ID, Query } from 'appwrite';
 import { toast } from 'react-hot-toast';
 
 // Define cart item structure
@@ -14,6 +14,8 @@ export type CartItem = {
   price: number;
   quantity: number;
   image: string;
+  slug: string;
+  variant_index?: number;
 };
 
 // Define types for Cart context
@@ -21,14 +23,14 @@ type CartContextType = {
   cartItems: CartItem[];
   cartCount: number;
   cartTotal: number;
-  addToCart: (item: Omit<CartItem, "id">) => Promise<void>;
+  addToCart: (item: Omit<CartItem, "id">) => Promise<CartItem | undefined>;
   updateQuantity: (id: string, quantity: number) => Promise<void>;
   removeFromCart: (id: string) => Promise<void>;
   clearCart: () => Promise<void>;
   isLoading: boolean;
   lastAddedItem: CartItem | null;
-  isInCart: (productId: string) => boolean;
-  getItemQuantity: (productId: string) => number;
+  isInCart: (productId: string, variantIndex?: number) => boolean;
+  getItemQuantity: (productId: string, variantIndex?: number) => number;
 };
 
 // Create context with default values
@@ -36,7 +38,7 @@ const CartContext = createContext<CartContextType>({
   cartItems: [],
   cartCount: 0,
   cartTotal: 0,
-  addToCart: async () => {},
+  addToCart: async () => undefined,
   updateQuantity: async () => {},
   removeFromCart: async () => {},
   clearCart: async () => {},
@@ -85,57 +87,21 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   // Fetch cart items from database
   const fetchCartItems = async (userOrSessionId: string) => {
     try {
-      // For simplicity in this example, we'll use localStorage for anonymous users
-      // and Appwrite DB for logged-in users
-      if (user) {
-        // Fetch from Appwrite database if logged in
-        const response = await databases.listDocuments(
-          process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '',
-          'cart', // Replace with your actual collection name
-          [Query.equal('userId', userOrSessionId)]
-        );
-        
-        // Map response to CartItem structure
-        const items: CartItem[] = response.documents.map(doc => ({
-          id: doc.$id,
-          productId: doc.productId,
-          name: doc.name,
-          price: doc.price,
-          quantity: doc.quantity,
-          image: doc.image,
-        }));
-        
-        setCartItems(items);
-      } else {
-        // For anonymous users, use localStorage
-        const storedCart = localStorage.getItem(`cart_${userOrSessionId}`);
-        if (storedCart) {
-          setCartItems(JSON.parse(storedCart));
-        } else {
-          setCartItems([]);
-        }
+      setIsLoading(true);
+      
+      if (!userOrSessionId) {
+        setCartItems([]);
+        return;
       }
+      
+      // Use the cart service to fetch items (works for both anonymous and logged-in users)
+      const items = await cartService.getCartItems(userOrSessionId);
+      setCartItems(items);
     } catch (error) {
       console.error("Error fetching cart items:", error);
       setCartItems([]);
-    }
-  };
-
-  // Save cart to appropriate storage
-  const saveCart = async (items: CartItem[], userOrSessionId: string) => {
-    if (!userOrSessionId) return;
-    
-    try {
-      if (user) {
-        // For logged-in users, we would sync with Appwrite DB
-        // This is a simplified example - you'd need to handle creates/updates/deletes
-        console.log("Saving cart to database for user:", userOrSessionId);
-      } else {
-        // For anonymous users, save to localStorage
-        localStorage.setItem(`cart_${userOrSessionId}`, JSON.stringify(items));
-      }
-    } catch (error) {
-      console.error("Error saving cart:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -146,54 +112,49 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setIsLoading(true);
       
-      // Check if product already exists in cart
-      const existingItemIndex = cartItems.findIndex(item => item.productId === newItem.productId);
+      // Use cart service to add the item
+      const result = await cartService.addToCart(
+        sessionId,
+        newItem.productId,
+        newItem.quantity || 1, 
+        newItem.variant_index || 0 // Pass variant index
+      );
       
-      let updatedCart: CartItem[];
-      let addedItem: CartItem;
-      
-      if (existingItemIndex > -1) {
-        // Update quantity if item already exists
-        const updatedQuantity = cartItems[existingItemIndex].quantity + newItem.quantity;
+      if (result) {
+        // Refresh the cart to get the updated state from the database
+        await fetchCartItems(sessionId);
         
-        // Create the updated item
-        addedItem = {
-          ...cartItems[existingItemIndex],
-          quantity: updatedQuantity
+        // Set the last added item for UI feedback
+        const addedItem = {
+          id: `${result.$id}_${newItem.productId}_${newItem.variant_index || 0}`, // Format is cartDocId_productId_variantIndex
+          productId: newItem.productId,
+          name: newItem.name,
+          price: newItem.price,
+          quantity: newItem.quantity,
+          image: newItem.image,
+          slug: newItem.slug,
+          variant_index: newItem.variant_index || 0
         };
         
-        // Update the cart
-        updatedCart = cartItems.map((item, index) => 
-          index === existingItemIndex ? addedItem : item
+        setLastAddedItem(addedItem);
+        
+        // Show success toast
+        const existingItem = cartItems.find(item => 
+          item.productId === newItem.productId && 
+          item.variant_index === newItem.variant_index
         );
         
-        toast.success(`Updated ${addedItem.name} quantity in your cart`);
-      } else {
-        // Add new item to cart
-        addedItem = {
-          ...newItem,
-          id: user ? ID.unique() : `local_${Date.now()}`,
-        };
+        if (existingItem) {
+          toast.success(`Updated ${newItem.name} quantity in your cart`);
+        } else {
+          toast.success(`${newItem.name} added to your cart`);
+        }
         
-        updatedCart = [...cartItems, addedItem];
-        
-        toast.success(`${addedItem.name} added to your cart`);
+        return addedItem;
       }
-      
-      // Update state
-      setCartItems(updatedCart);
-      
-      // Store the last added item for potential UI feedback
-      setLastAddedItem(addedItem);
-      
-      // Save to storage
-      await saveCart(updatedCart, sessionId);
-      
-      return addedItem;
     } catch (error) {
       console.error("Error adding item to cart:", error);
       toast.error("Failed to add item to cart");
-      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -206,18 +167,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setIsLoading(true);
       
-      // Find item and update quantity
-      const updatedCart = cartItems.map(item => 
-        item.id === id ? { ...item, quantity } : item
-      );
+      // Use cart service to update the quantity
+      const success = await cartService.updateCartItemQuantity(id, quantity);
       
-      // Update state
-      setCartItems(updatedCart);
-      
-      // Save to storage
-      await saveCart(updatedCart, sessionId);
+      if (success) {
+        // Refresh the cart
+        await fetchCartItems(sessionId);
+        toast.success("Cart updated");
+      }
     } catch (error) {
       console.error("Error updating cart item quantity:", error);
+      toast.error("Failed to update cart");
     } finally {
       setIsLoading(false);
     }
@@ -230,16 +190,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setIsLoading(true);
       
-      // Filter out the item to remove
-      const updatedCart = cartItems.filter(item => item.id !== id);
+      // Use cart service to remove the item
+      const success = await cartService.removeFromCart(id);
       
-      // Update state
-      setCartItems(updatedCart);
-      
-      // Save to storage
-      await saveCart(updatedCart, sessionId);
+      if (success) {
+        // Refresh the cart
+        await fetchCartItems(sessionId);
+        toast.success("Item removed from cart");
+      }
     } catch (error) {
       console.error("Error removing item from cart:", error);
+      toast.error("Failed to remove item from cart");
     } finally {
       setIsLoading(false);
     }
@@ -252,27 +213,49 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setIsLoading(true);
       
-      // Empty the cart
-      setCartItems([]);
+      // Use cart service to clear the cart
+      const success = await cartService.clearCart(sessionId);
       
-      // Save to storage
-      await saveCart([], sessionId);
+      if (success) {
+        // Update local state
+        setCartItems([]);
+        toast.success("Cart cleared");
+      }
     } catch (error) {
       console.error("Error clearing cart:", error);
+      toast.error("Failed to clear cart");
     } finally {
       setIsLoading(false);
     }
   };
 
   // Check if product is in cart
-  const isInCart = (productId: string): boolean => {
+  const isInCart = (productId: string, variantIndex?: number): boolean => {
+    if (variantIndex !== undefined) {
+      // If variantIndex is provided, check both productId and variantIndex
+      return cartItems.some(item => 
+        item.productId === productId && 
+        item.variant_index === variantIndex
+      );
+    }
+    // Otherwise just check productId (backwards compatibility)
     return cartItems.some(item => item.productId === productId);
   };
 
   // Get item quantity in cart
-  const getItemQuantity = (productId: string): number => {
-    const item = cartItems.find(item => item.productId === productId);
-    return item ? item.quantity : 0;
+  const getItemQuantity = (productId: string, variantIndex?: number): number => {
+    if (variantIndex !== undefined) {
+      // If variantIndex is provided, find the item with matching productId and variantIndex
+      const item = cartItems.find(item => 
+        item.productId === productId && 
+        item.variant_index === variantIndex
+      );
+      return item ? item.quantity : 0;
+    }
+    // If no variantIndex provided, get total quantity of this product across all variants
+    return cartItems
+      .filter(item => item.productId === productId)
+      .reduce((total, item) => total + item.quantity, 0);
   };
 
   // Context value

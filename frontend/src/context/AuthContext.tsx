@@ -56,7 +56,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const currentUser = await appwriteService.getCurrentUser();
       
       if (currentUser) {
-        setUser(currentUser);
+        // Type-safe conversion of the Appwrite user to our User type
+        setUser({
+          $id: currentUser.$id,
+          email: currentUser.email,
+          name: currentUser.name,
+          role: (currentUser.role === 'customer' || currentUser.role === 'designer') 
+            ? currentUser.role as 'customer' | 'designer' 
+            : undefined
+        });
       } else {
         setUser(null);
       }
@@ -89,10 +97,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // Signup function
-  const signup = async (email: string, password: string, name: string, role?: 'customer' | 'designer'): Promise<void> => {
+  const signup = async (email: string, password: string, name: string): Promise<void> => {
     try {
       setLoading(true);
-      await appwriteService.createAccount(email, password, name, role);
+      await appwriteService.createAccount(email, password, name);
       await checkAuthStatus();
       router.push('/');
     } catch (error) {

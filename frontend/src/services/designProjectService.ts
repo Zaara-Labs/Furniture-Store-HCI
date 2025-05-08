@@ -1,5 +1,5 @@
 import { ID, Query } from 'appwrite';
-import { client as appwriteClient, databases as appwriteDatabases, storage as appwritewStorage } from './appwrite';
+import { databases as appwriteDatabases, storage as appwriteStorage } from './appwrite';
 import { RoomSettings, FurnitureItemProps } from '@/types/room-designer';
 
 // Camera settings type
@@ -134,18 +134,19 @@ const designProjectService = {
   },
 
   stringifyProject(project: Partial<ParsedDesignProject>): Partial<DesignProject> {
-    const result: Partial<DesignProject> = { ...project };
+    const { room, camera, furniture, ...rest } = project;
+    const result: Partial<DesignProject> = { ...rest };
 
-    if (project.room) {
-      result.room = JSON.stringify(project.room);
+    if (room) {
+      result.room = JSON.stringify(room);
     }
 
-    if (project.camera) {
-      result.camera = JSON.stringify(project.camera);
+    if (camera) {
+      result.camera = JSON.stringify(camera);
     }
 
-    if (project.furniture) {
-      result.furniture = JSON.stringify(project.furniture);
+    if (furniture) {
+      result.furniture = JSON.stringify(furniture);
     }
 
     return result;
@@ -174,14 +175,14 @@ const designProjectService = {
       const file = new File([blob], `project-${projectId}-${Date.now()}.png`, { type: 'image/png' });
 
       // Upload to Appwrite storage
-      const result = await appwritewStorage.createFile(
+      const result = await appwriteStorage.createFile(
         THUMBNAIL_BUCKET_ID,
         ID.unique(),
         file
       );
 
       // Get the file URL
-      const fileURL = appwritewStorage.getFileView(
+      const fileURL = appwriteStorage.getFileView(
         THUMBNAIL_BUCKET_ID,
         result.$id
       );
@@ -212,7 +213,7 @@ const designProjectService = {
       }
 
       // Delete the file
-      await appwritewStorage.deleteFile(
+      await appwriteStorage.deleteFile(
         THUMBNAIL_BUCKET_ID,
         fileId
       );

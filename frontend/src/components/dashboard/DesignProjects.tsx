@@ -26,7 +26,16 @@ export default function DesignProjects() {
         try {
           const fetchedProjects = await designProjectService.getDesignerProjects(user.$id);
           // Only show the most recent 3 projects in the dashboard widget
-          setProjects(fetchedProjects.slice(0, 3));
+          setProjects(fetchedProjects.slice(0, 3).map(project => ({
+            $id: project.$id || '',
+            name: project.name || '',
+            status: project.status || '',
+            createdAt: typeof project.createdAt === 'object' && project.createdAt instanceof Date 
+              ? project.createdAt.toISOString() 
+              : (project.createdAt || ''),
+            description: project.description,
+            thumbnailUrl: project.thumbnailUrl
+          })));
         } catch (error) {
           console.error('Error fetching design projects:', error);
         } finally {

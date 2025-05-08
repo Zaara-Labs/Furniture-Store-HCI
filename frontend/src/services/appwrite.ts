@@ -22,7 +22,7 @@ if (!APPWRITE_PROJECT_ID) {
 // Configure client
 client
   .setEndpoint(APPWRITE_ENDPOINT)
-  .setProject(APPWRITE_PROJECT_ID);
+  .setProject(APPWRITE_PROJECT_ID || "");
 
 // Initialize Account
 const account = new Account(client);
@@ -50,10 +50,25 @@ const storeAnonSessionId = (sessionId: string): void => {
   }
 };
 
+// Helper function to get a user or session ID
+export const getUserOrSessionId = async () => {
+  try {
+    const currentUser = await appwriteService.getCurrentUser();
+    if (currentUser) {
+      return currentUser.$id;
+    } else {
+      return await appwriteService.getAnonymousSession();
+    }
+  } catch (error) {
+    console.error("Error getting user or session ID:", error);
+    return "anonymous_" + Date.now().toString();
+  }
+};
+
 // Authentication functions
 export const appwriteService = {
   // Create a new account
-  createAccount: async (email: string, password: string, name: string, role: 'customer' | 'designer' = 'customer') => {
+  createAccount: async (email: string, password: string, name: string) => {
     try {
       const userId = ID.unique();
       const newAccount = await account.create(
@@ -64,7 +79,6 @@ export const appwriteService = {
       );
 
       if (newAccount) {
-
         // Login immediately after successful signup
         return await appwriteService.login(email, password);
       } else {
@@ -235,7 +249,7 @@ export const productService = {
       );
 
       // Return the URL for the uploaded file
-      return storage.getFileView(PRODUCT_IMAGES_BUCKET_ID, response.$id).href;
+      return storage.getFileView(PRODUCT_IMAGES_BUCKET_ID, response.$id);
     } catch (error) {
       console.error("Product service :: uploadProductImage :: error", error);
       throw error;
@@ -252,7 +266,7 @@ export const productService = {
       );
 
       // Return the URL for the uploaded file
-      return storage.getFileView(PRODUCT_MODELS_BUCKET_ID, response.$id).href;
+      return storage.getFileView(PRODUCT_MODELS_BUCKET_ID, response.$id);
     } catch (error) {
       console.error("Product service :: uploadProductModel :: error", error);
       throw error;

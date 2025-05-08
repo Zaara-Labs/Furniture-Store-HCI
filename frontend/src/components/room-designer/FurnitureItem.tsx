@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useThree } from '@react-three/fiber';
 import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -55,7 +55,7 @@ const FurnitureItem = ({
   }, [error, instanceId]);
 
   // Deep clone a model and its materials, ensuring complete independence
-  const createIndependentModelCopy = (originalScene: THREE.Group): THREE.Group => {
+  const createIndependentModelCopy = useCallback((originalScene: THREE.Group): THREE.Group => {
     console.log(`Creating independent model for instance ${instanceId} (index: ${index})`);
     
     // Create a deep clone of the scene
@@ -108,48 +108,73 @@ const FurnitureItem = ({
     
     console.log(`Created independent model with ${instanceMaterials.current.length} unique materials`);
     return clonedScene;
+  }, [instanceId, index]);
+  
+  // Function to load and cache a texture
+  const loadTexture = (url: string): Promise<THREE.Texture> => {
+    return new Promise((resolve, reject) => {
+      // Check cache first
+      if (textureCache.has(url)) {
+        resolve(textureCache.get(url)!);
+        return;
+      }
+      
+      // Load new texture
+      const loader = new THREE.TextureLoader();
+      loader.load(
+        url,
+        (texture) => {
+          // Cache the texture
+          textureCache.set(url, texture);
+          resolve(texture);
+        },
+        undefined,
+        (error) => {
+          reject(error);
+        }
+      );
+    });
   };
   
-  // Create/retrieve model for this instance
-  useEffect(() => {
-    if (!baseScene || modelLoaded) return;
+  // Apply texture to this specific instance only
+  const applyTexture = useCallback(async (textureUrl: string) => {
+    if (!modelRef.current || instanceMaterials.current.length === 0) {
+      console.warn(`Cannot apply texture to instance ${instanceId}: Model not ready`);
+      return;
+    }
     
-    const initializeModel = () => {
-      try {
-        // Check if we have loaded meshes
-        if (baseScene.children.length > 0) {
-          console.log(`Initializing model for ${item.name} (instance: ${instanceId}, index: ${index})`);
-          
-          // Create an independent copy with unique materials
-          const independentModel = createIndependentModelCopy(baseScene);
-          
-          // Store in our instance-specific ref
-          modelRef.current = independentModel;
-          
-          // Cache the model by instanceId for potential reuse
-          modelInstanceCache.set(instanceId, independentModel);
-          
-          // Now apply scaling and other settings
-          applyModelSettings();
-          
-          setIsLoading(false);
-          setModelLoaded(true);
-        } else {
-          // No meshes yet, try again shortly
-          setTimeout(initializeModel, 100);
+    setIsTextureLoading(true);
+    setTextureError(null);
+    
+    try {
+      // Load or retrieve cached texture
+      const texture = await loadTexture(textureUrl);
+      
+      // Apply to all materials for this instance (which we tracked in instanceMaterials)
+      let materialsUpdated = 0;
+      
+      instanceMaterials.current.forEach(material => {
+        if (material) {
+          // Check if material is of a type that supports textures
+          if (material instanceof THREE.MeshStandardMaterial) {
+            material.map = texture;
+            material.needsUpdate = true;
+            materialsUpdated++;
+          }
         }
-      } catch (err) {
-        console.error(`Error initializing model for instance ${instanceId}:`, err);
-        setLoadError(`Error preparing model: ${err instanceof Error ? err.message : String(err)}`);
-        setIsLoading(false);
-      }
-    };
-    
-    initializeModel();
-  }, [baseScene, instanceId, index, item.name, modelLoaded]);
-  
+      });
+      
+      setIsTextureLoading(false);
+      console.log(`Texture applied to instance ${instanceId} (index: ${index}), updated ${materialsUpdated} materials`);
+    } catch (err) {
+      setIsTextureLoading(false);
+      setTextureError(`Failed to load texture: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(`Error applying texture to instance ${instanceId}:`, err);
+    }
+  }, [instanceId, index]);
+
   // Apply scaling and other settings to the model
-  const applyModelSettings = () => {
+  const applyModelSettings = useCallback(() => {
     if (!modelRef.current) return;
     
     try {
@@ -206,77 +231,52 @@ const FurnitureItem = ({
       console.error(`Error scaling model for instance ${instanceId}:`, err);
       setLoadError(`Error configuring model: ${err instanceof Error ? err.message : String(err)}`);
     }
-  };
-  
-  // Function to load and cache a texture
-  const loadTexture = (url: string): Promise<THREE.Texture> => {
-    return new Promise((resolve, reject) => {
-      // Check cache first
-      if (textureCache.has(url)) {
-        resolve(textureCache.get(url)!);
-        return;
+  }, [instanceId, index, item.dimensions, item.dimensionSku, item.textureUrl, applyTexture]);
+
+  // Create/retrieve model for this instance
+  useEffect(() => {
+    if (!baseScene || modelLoaded) return;
+    
+    const initializeModel = () => {
+      try {
+        // Check if we have loaded meshes
+        if (baseScene.children.length > 0) {
+          console.log(`Initializing model for ${item.name} (instance: ${instanceId}, index: ${index})`);
+          
+          // Create an independent copy with unique materials
+          const independentModel = createIndependentModelCopy(baseScene);
+          
+          // Store in our instance-specific ref
+          modelRef.current = independentModel;
+          
+          // Cache the model by instanceId for potential reuse
+          modelInstanceCache.set(instanceId, independentModel);
+          
+          // Now apply scaling and other settings
+          applyModelSettings();
+          
+          setIsLoading(false);
+          setModelLoaded(true);
+        } else {
+          // No meshes yet, try again shortly
+          setTimeout(initializeModel, 100);
+        }
+      } catch (err) {
+        console.error(`Error initializing model for instance ${instanceId}:`, err);
+        setLoadError(`Error preparing model: ${err instanceof Error ? err.message : String(err)}`);
+        setIsLoading(false);
       }
-      
-      // Load new texture
-      const loader = new THREE.TextureLoader();
-      loader.load(
-        url,
-        (texture) => {
-          // Cache the texture
-          textureCache.set(url, texture);
-          resolve(texture);
-        },
-        undefined,
-        (error) => {
-          reject(error);
-        }
-      );
-    });
-  };
-  
-  // Apply texture to this specific instance only
-  const applyTexture = async (textureUrl: string) => {
-    if (!modelRef.current || instanceMaterials.current.length === 0) {
-      console.warn(`Cannot apply texture to instance ${instanceId}: Model not ready`);
-      return;
-    }
+    };
     
-    setIsTextureLoading(true);
-    setTextureError(null);
-    
-    try {
-      // Load or retrieve cached texture
-      const texture = await loadTexture(textureUrl);
-      
-      // Apply to all materials for this instance (which we tracked in instanceMaterials)
-      let materialsUpdated = 0;
-      
-      instanceMaterials.current.forEach(material => {
-        if (material) {
-          // Check if material is of a type that supports textures
-          if (material instanceof THREE.MeshStandardMaterial) {
-            material.map = texture;
-            material.needsUpdate = true;
-            materialsUpdated++;
-          }
-        }
-      });
-      
-      setIsTextureLoading(false);
-      console.log(`Texture applied to instance ${instanceId} (index: ${index}), updated ${materialsUpdated} materials`);
-    } catch (err) {
-      setIsTextureLoading(false);
-      setTextureError(`Failed to load texture: ${err instanceof Error ? err.message : String(err)}`);
-      console.error(`Error applying texture to instance ${instanceId}:`, err);
-    }
-  };
+    initializeModel();
+  }, [baseScene, instanceId, index, item.name, modelLoaded, applyModelSettings, createIndependentModelCopy]);
   
   // Update texture when it changes in props
   useEffect(() => {
     if (modelLoaded && item.textureUrl) {
       applyTexture(item.textureUrl);
     }
-  }, [item.textureUrl, modelLoaded]);
+  }, [item.textureUrl, modelLoaded, applyTexture]);
   
   // Update position from props
   useEffect(() => {

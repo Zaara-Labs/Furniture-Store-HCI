@@ -196,13 +196,26 @@ export default function ProductPage() {
         ? product.variation_prices[selectedVariation]
         : (Array.isArray(product.price) ? product.price[selectedVariation] : product.price);
       
+      // Get variant name if available
+      let variantName = '';
+      if (product.variation_names && product.variation_names.length > selectedVariation) {
+        variantName = product.variation_names[selectedVariation];
+      }
+      
+      // Get the appropriate image for this variant
+      const image = product.variation_images && product.variation_images.length > selectedVariation 
+        ? product.variation_images[selectedVariation] 
+        : (product.main_image_url || "");
+      
       // Add to cart
       await addToCart({
         productId: product.$id,
-        name: product.name,
+        name: variantName ? `${product.name} - ${variantName}` : product.name,
         price: price,
         quantity: quantity,
-        image: product.main_image_url || ""
+        image: image,
+        slug: product.slug || "",
+        variant_index: selectedVariation  // Add the variant index
       });
       
       // Navigate to cart page
@@ -293,12 +306,6 @@ export default function ProductPage() {
   const currentPrice = product.variation_prices ? 
     product.variation_prices[selectedVariation] : 
     (Array.isArray(product.price) ? product.price[selectedVariation] : product.price);
-
-  // Create a product object with the selected variation
-  const productWithVariation = {
-    ...product,
-    price: currentPrice
-  };
 
   // Set a default stock quantity if it's not defined
   // This ensures products without explicit stock_quantity can still be added to cart
@@ -489,6 +496,7 @@ export default function ProductPage() {
                       className="w-full py-3 px-6"
                       size="lg"
                       onSuccess={handleAddToCartSuccess}
+                      variantIndex={selectedVariation}
                     />
                     <button
                       onClick={handleBuyNow}
