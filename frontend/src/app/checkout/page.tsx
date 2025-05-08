@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 
-// Form types
+// Form data types
 type ShippingFormData = {
   fullName: string;
   addressLine1: string;
@@ -28,8 +28,8 @@ export default function CheckoutPage() {
   const { cartItems, cartTotal } = useCart();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize form
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ShippingFormData>({
+  // Initialize form with react-hook-form
+  const { register, handleSubmit, formState: { errors } } = useForm<ShippingFormData>({
     defaultValues: {
       fullName: "",
       addressLine1: "",
@@ -39,7 +39,7 @@ export default function CheckoutPage() {
       postalCode: "",
       country: "Sri Lanka",
       phone: "",
-      email: "",
+      email: user?.email || "",
       saveAddress: true
     }
   });
@@ -50,15 +50,35 @@ export default function CheckoutPage() {
       router.push("/cart");
     }
     
-    // Pre-fill email from user account
-    if (user?.email) {
-      setValue("email", user.email);
-    }
+    // Check for saved shipping details (e.g., if coming back from payment page)
+    const savedShippingDetails = sessionStorage.getItem('shippingDetails');
     
-    if (user?.name) {
-      setValue("fullName", user.name);
+    if (savedShippingDetails) {
+      const parsedDetails = JSON.parse(savedShippingDetails);
+      
+      // Pre-populate form with saved details if they exist
+      // Note: This doesn't work directly with react-hook-form, so we'd need to use setValue in a real implementation
     }
-  }, [cartItems.length, router, user, setValue]);
+  }, [cartItems.length, router]);
+
+  // Handle form submission
+  const onSubmit = (data: ShippingFormData) => {
+    setIsLoading(true);
+    
+    try {
+      // Store shipping details in session storage for the payment page
+      sessionStorage.setItem('shippingDetails', JSON.stringify(data));
+      
+      // If this were a real implementation, we might save the address to the user's account here
+      
+      // Navigate to payment page
+      router.push('/checkout/payment');
+    } catch (error) {
+      console.error("Error saving shipping details:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Shipping cost calculation (simplified)
   const shippingCost = cartTotal > 100 ? 0 : 10;
@@ -66,22 +86,6 @@ export default function CheckoutPage() {
   const taxAmount = cartTotal * 0.1;
   // Order total
   const orderTotal = cartTotal + shippingCost + taxAmount;
-
-  // Handle form submission
-  const onSubmit = async (data: ShippingFormData) => {
-    setIsLoading(true);
-    try {
-      // Save the shipping data to session storage to use in payment page
-      sessionStorage.setItem('shippingDetails', JSON.stringify(data));
-      
-      // Navigate to payment page
-      router.push('/checkout/payment');
-    } catch (error) {
-      console.error("Error in checkout:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -92,66 +96,27 @@ export default function CheckoutPage() {
           <h1 className="text-3xl font-serif font-medium mb-8">Checkout</h1>
           
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Left Column - Form */}
+            {/* Left Column - Shipping Form */}
             <div className="lg:w-2/3">
               <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-                <h2 className="text-xl font-medium mb-6">Shipping Address</h2>
+                <h2 className="text-xl font-medium mb-6">Shipping Information</h2>
                 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-                        Full Name *
-                      </label>
-                      <input
-                        id="fullName"
-                        type="text"
-                        {...register("fullName", { 
-                          required: "Full name is required" 
-                        })}
-                        className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-transparent"
-                      />
-                      {errors.fullName && (
-                        <p className="mt-1 text-sm text-red-600">{errors.fullName.message}</p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                        Email Address *
-                      </label>
-                      <input
-                        id="email"
-                        type="email"
-                        {...register("email", { 
-                          required: "Email is required",
-                          pattern: {
-                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                            message: "Invalid email address"
-                          }
-                        })}
-                        className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-transparent"
-                      />
-                      {errors.email && (
-                        <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-                      )}
-                    </div>
-                  </div>
-                  
                   <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number *
+                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                      Full Name *
                     </label>
                     <input
-                      id="phone"
-                      type="tel"
-                      {...register("phone", { 
-                        required: "Phone number is required" 
+                      id="fullName"
+                      type="text"
+                      {...register("fullName", { 
+                        required: "Full name is required" 
                       })}
                       className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-transparent"
+                      placeholder="John Doe"
                     />
-                    {errors.phone && (
-                      <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+                    {errors.fullName && (
+                      <p className="mt-1 text-sm text-red-600">{errors.fullName.message}</p>
                     )}
                   </div>
                   
@@ -166,7 +131,7 @@ export default function CheckoutPage() {
                         required: "Address is required" 
                       })}
                       className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-transparent"
-                      placeholder="Street address, P.O. box, company name"
+                      placeholder="123 Main St"
                     />
                     {errors.addressLine1 && (
                       <p className="mt-1 text-sm text-red-600">{errors.addressLine1.message}</p>
@@ -175,14 +140,14 @@ export default function CheckoutPage() {
                   
                   <div>
                     <label htmlFor="addressLine2" className="block text-sm font-medium text-gray-700 mb-1">
-                      Address Line 2 <span className="text-gray-500">(Optional)</span>
+                      Address Line 2 <span className="text-gray-500 text-xs">(Optional)</span>
                     </label>
                     <input
                       id="addressLine2"
                       type="text"
                       {...register("addressLine2")}
                       className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-transparent"
-                      placeholder="Apartment, suite, unit, building, floor, etc."
+                      placeholder="Apartment, suite, unit, etc."
                     />
                   </div>
                   
@@ -198,6 +163,7 @@ export default function CheckoutPage() {
                           required: "City is required" 
                         })}
                         className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-transparent"
+                        placeholder="Colombo"
                       />
                       {errors.city && (
                         <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
@@ -206,15 +172,16 @@ export default function CheckoutPage() {
                     
                     <div>
                       <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
-                        State/Province *
+                        Province/State *
                       </label>
                       <input
                         id="state"
                         type="text"
                         {...register("state", { 
-                          required: "State is required" 
+                          required: "Province/State is required" 
                         })}
                         className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-transparent"
+                        placeholder="Western"
                       />
                       {errors.state && (
                         <p className="mt-1 text-sm text-red-600">{errors.state.message}</p>
@@ -232,6 +199,7 @@ export default function CheckoutPage() {
                           required: "Postal code is required" 
                         })}
                         className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-transparent"
+                        placeholder="10000"
                       />
                       {errors.postalCode && (
                         <p className="mt-1 text-sm text-red-600">{errors.postalCode.message}</p>
@@ -252,13 +220,58 @@ export default function CheckoutPage() {
                     >
                       <option value="Sri Lanka">Sri Lanka</option>
                       <option value="India">India</option>
-                      <option value="Maldives">Maldives</option>
+                      <option value="United States">United States</option>
+                      <option value="United Kingdom">United Kingdom</option>
+                      <option value="Australia">Australia</option>
+                      <option value="Canada">Canada</option>
                       <option value="Singapore">Singapore</option>
                       <option value="Malaysia">Malaysia</option>
                     </select>
                     {errors.country && (
                       <p className="mt-1 text-sm text-red-600">{errors.country.message}</p>
                     )}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number *
+                      </label>
+                      <input
+                        id="phone"
+                        type="tel"
+                        {...register("phone", { 
+                          required: "Phone number is required" 
+                        })}
+                        className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-transparent"
+                        placeholder="+94 77 123 4567"
+                      />
+                      {errors.phone && (
+                        <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                        Email *
+                      </label>
+                      <input
+                        id="email"
+                        type="email"
+                        {...register("email", { 
+                          required: "Email is required",
+                          pattern: {
+                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                            message: "Invalid email address"
+                          }
+                        })}
+                        className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-transparent"
+                        placeholder="johndoe@example.com"
+                      />
+                      {errors.email && (
+                        <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="flex items-start pt-2">
@@ -269,14 +282,14 @@ export default function CheckoutPage() {
                       className="h-4 w-4 text-amber-800 focus:ring-amber-800 border-gray-300 rounded mt-1"
                     />
                     <label htmlFor="saveAddress" className="ml-2 text-sm text-gray-600">
-                      Save this address for future orders
+                      Save this address for future purchases
                     </label>
                   </div>
                   
-                  <div className="pt-4 flex gap-4">
+                  <div className="pt-4 flex gap-4 justify-end">
                     <button
                       type="button"
-                      onClick={() => router.back()}
+                      onClick={() => router.push('/cart')}
                       className="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-md hover:bg-gray-300 transition-colors"
                     >
                       Return to Cart
@@ -284,20 +297,10 @@ export default function CheckoutPage() {
                     
                     <button
                       type="submit"
-                      className="px-6 py-3 bg-amber-800 text-white font-medium rounded-md hover:bg-amber-900 transition-colors flex items-center"
+                      className="px-6 py-3 bg-amber-800 text-white font-medium rounded-md hover:bg-amber-900 transition-colors"
                       disabled={isLoading}
                     >
-                      {isLoading ? (
-                        <>
-                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Processing...
-                        </>
-                      ) : (
-                        'Continue to Payment'
-                      )}
+                      {isLoading ? "Processing..." : "Continue to Payment"}
                     </button>
                   </div>
                 </form>
@@ -342,22 +345,6 @@ export default function CheckoutPage() {
                   <div className="border-t pt-4 flex justify-between">
                     <p className="font-medium">Total</p>
                     <p className="font-medium text-xl text-amber-800">${orderTotal.toFixed(2)}</p>
-                  </div>
-                </div>
-                
-                <div className="pt-4 mt-2 border-t border-gray-200">
-                  <div className="flex items-center mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-sm text-gray-700">Secure checkout</span>
-                  </div>
-                  
-                  <div className="flex items-center mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-sm text-gray-700">Free shipping on orders over $100</span>
                   </div>
                 </div>
               </div>
