@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { RoomSettings, FurnitureItemProps } from '@/types/room-designer';
 import { Product } from '@/types/collections/Product';
-import { getUnitConversionFactor } from '@/utils/roomUtils';
+import { getUnitConversionFactor, roomPresets } from '@/utils/roomUtils';
 
 interface Room2DDesignerProps {
   room: RoomSettings;
@@ -17,6 +17,7 @@ interface Room2DDesignerProps {
   onRotateFurniture: (index: number, axis: 'x' | 'y' | 'z', degrees: number) => void;
   onAddFurniture: (product: Product) => void;
   onRemoveFurniture: (index: number) => void;
+  onApplyRoomPreset: (preset: RoomSettings) => void;
 }
 
 const Room2DDesigner = ({
@@ -29,15 +30,16 @@ const Room2DDesigner = ({
   onUpdatePosition,
   onRotateFurniture,
   onAddFurniture,
-  onRemoveFurniture
+  onRemoveFurniture,
+  onApplyRoomPreset
 }: Room2DDesignerProps) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvasWidth, setCanvasWidth] = useState(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);  const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
   const [scale, setScale] = useState(30); // pixels per meter
   const [dragging, setDragging] = useState(false);
   const [dragItemIndex, setDragItemIndex] = useState<number | null>(null);
   const [dragStartPos, setDragStartPos] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
+  const [isRoomPresetsCollapsed, setIsRoomPresetsCollapsed] = useState(true);
 
   // Update canvas dimensions when component mounts or window resizes
   useEffect(() => {
@@ -333,8 +335,58 @@ const Room2DDesigner = ({
                   type="color" 
                   value={room.floorColor} 
                   onChange={(e) => onUpdateRoom({ floorColor: e.target.value })}
-                  className="w-8 h-8 rounded border overflow-hidden cursor-pointer"
-                />
+                  className="w-8 h-8 rounded border overflow-hidden cursor-pointer"                />
+              </div>
+            </div>
+          </div>
+            {/* Room Presets */}
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <button 
+              onClick={() => setIsRoomPresetsCollapsed(!isRoomPresetsCollapsed)}
+              className="font-medium text-xs mb-2 text-blue-800 flex items-center justify-between w-full hover:bg-blue-50 p-2 rounded transition-colors"
+              aria-expanded={!isRoomPresetsCollapsed}
+              aria-controls="room-presets-section"
+            >
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span>Room Presets</span>
+              </div>              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className={`h-3 w-3 transition-transform ${isRoomPresetsCollapsed ? '' : 'rotate-180'}`}
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {/* Collapsible content */}
+            <div 
+              id="room-presets-section"
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                isRoomPresetsCollapsed ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'
+              }`}
+            >
+              <div className="grid grid-cols-1 gap-2 mt-2 max-h-[200px] overflow-y-auto pr-1">
+                {roomPresets.map((preset, index) => (
+                  <button 
+                    key={index}
+                    className="border border-gray-200 hover:border-blue-300 p-2 rounded text-left hover:bg-blue-50 transition-all"
+                    onClick={() => onApplyRoomPreset(preset)}
+                  >
+                    <div className="flex items-center">
+                      <span 
+                        className="w-3 h-3 rounded-full border border-gray-300 mr-1.5"
+                        style={{ backgroundColor: preset.wallColor }}
+                      ></span>
+                      <span className="text-xs font-medium">{preset.name}</span>
+                    </div>
+                    <p className="text-gray-500 text-xs mt-0.5">{preset.width}m × {preset.length}m space</p>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -417,11 +469,9 @@ const Room2DDesigner = ({
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Helper text */}
+      </div>      {/* Helper text */}
       <div className="absolute bottom-4 left-4 bg-white bg-opacity-80 text-xs rounded-full px-3 py-1.5 shadow-sm border border-gray-100 text-gray-700 z-20">
-        <span>Click and drag to move items • Click to select • Use controls to adjust room</span>
+        <span>Click and drag to move items • Click to select • Choose room presets or customize dimensions</span>
       </div>
     </div>
   );

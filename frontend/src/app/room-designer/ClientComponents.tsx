@@ -240,12 +240,14 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
               room={room}
               furniture={furniture}
               products={products}
-              selectedItemIndex={selectedItemIndex}              onUpdateRoom={updateRoomDimensions}
+              selectedItemIndex={selectedItemIndex}              
+              onUpdateRoom={updateRoomDimensions}
               onSelectFurniture={selectFurniture}
               onUpdatePosition={updateFurniturePosition}
               onRotateFurniture={rotateFurniture}
               onAddFurniture={addFurniture}
               onRemoveFurniture={removeFurniture}
+              onApplyRoomPreset={applyRoomPreset}
             />
           </div>
         ) : (
