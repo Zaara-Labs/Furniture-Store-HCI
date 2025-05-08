@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls as StdLibOrbitControls } from 'three-stdlib';
 import { useRouter } from 'next/navigation';
 import RoomCanvas from '@/components/room-designer/RoomCanvas';
+import Room2DDesigner from '@/components/room-designer/Room2DDesigner';
 import ProductCatalog from '@/components/room-designer/ProductCatalog';
 import { useRoomDesigner } from '@/hooks/useRoomDesigner';
 import { captureCanvasScreenshot } from '@/utils/roomUtils';
@@ -29,7 +30,7 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
   const [projectDescription, setProjectDescription] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-  
+  const [viewMode, setViewMode] = useState<'2D' | '3D'>('2D'); // Start with 2D view by default
   const {
     room,
     furniture,
@@ -145,8 +146,7 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
   };
 
   return (
-    <>
-      {/* Project actions header */}
+    <>      {/* Project actions header */}
       <div className="bg-white shadow-sm border-b px-4 py-2 fixed top-16 left-0 right-0 z-10 flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <h2 className="text-lg font-medium text-gray-800">
@@ -157,6 +157,30 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
               {currentProject.status}
             </span>
           )}
+          
+          {/* View Mode Toggle */}
+          <div className="flex items-center space-x-1 ml-6 bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setViewMode('2D')}
+              className={`text-xs px-3 py-1 rounded ${
+                viewMode === '2D' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              2D Design
+            </button>
+            <button
+              onClick={() => setViewMode('3D')}
+              className={`text-xs px-3 py-1 rounded ${
+                viewMode === '3D' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              3D View
+            </button>
+          </div>
         </div>
         <div className="flex items-center space-x-2">
           <button
@@ -188,42 +212,76 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
                 </svg>
                 Save
               </>
-            )}
-          </button>
+            )}          </button>
         </div>
       </div>
       
       <main className="flex-grow flex flex-col md:flex-row pt-28">
-        {/* 3D Canvas */}
-        <RoomCanvas 
-          room={room}
-          furniture={furniture}
-          camera={camera}
-          products={products}
-          selectedItemIndex={selectedItemIndex}
-          cameraRef={cameraRef as React.RefObject<THREE.PerspectiveCamera>}
-          controlsRef={controlsRef as unknown as React.RefObject<StdLibOrbitControls>}
-          draggingEnabled={draggingEnabled}
-          onUpdateRoom={updateRoomDimensions}
-          onUpdateCamera={updateCamera}
-          onSelectFurniture={selectFurniture}
-          onUpdatePosition={updateFurniturePosition}
-          onRotate={rotateFurniture}
-          onScale={adjustScale}
-          onRemoveFurniture={removeFurniture}
-          onUpdateTexture={updateFurnitureTexture}
-          onToggleDragging={toggleDragging}
-          onCaptureCameraState={captureCurrentCameraState}
-        />
+        {/* Workflow Guidance */}
+        {viewMode === '2D' && (
+          <div className="bg-blue-50 text-blue-800 text-sm px-4 py-3 border-b border-blue-100 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p>Start by designing your room layout in 2D. Set dimensions, add furniture, and arrange items by dragging. When you&apos;re ready to visualize in 3D, click the &quot;3D View&quot; button above.</p>
+          </div>
+        )}
         
-        {/* Product Catalog */}
-        <ProductCatalog 
-          products={products}
-          isLoading={isLoading}
-          currentProductId={currentProductId}
-          onAddFurniture={addFurniture}
-          onApplyRoomPreset={applyRoomPreset}
-        />
+        {viewMode === '3D' && (
+          <div className="bg-green-50 text-green-800 text-sm px-4 py-3 border-b border-green-100 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p>You&apos;re now in 3D view mode. You can rotate the camera, explore from different angles, and continue to make adjustments. Switch back to 2D view at any time to modify the layout.</p>
+          </div>
+        )}        {viewMode === '2D' ? (
+          <div className="h-[60vh] md:h-auto md:w-full relative bg-gray-100">
+            <Room2DDesigner 
+              room={room}
+              furniture={furniture}
+              products={products}
+              selectedItemIndex={selectedItemIndex}              onUpdateRoom={updateRoomDimensions}
+              onSelectFurniture={selectFurniture}
+              onUpdatePosition={updateFurniturePosition}
+              onRotateFurniture={rotateFurniture}
+              onAddFurniture={addFurniture}
+              onRemoveFurniture={removeFurniture}
+            />
+          </div>
+        ) : (
+          <>
+            {/* 3D Canvas */}
+            <RoomCanvas 
+              room={room}
+              furniture={furniture}
+              camera={camera}
+              products={products}
+              selectedItemIndex={selectedItemIndex}
+              cameraRef={cameraRef as React.RefObject<THREE.PerspectiveCamera>}
+              controlsRef={controlsRef as unknown as React.RefObject<StdLibOrbitControls>}
+              draggingEnabled={draggingEnabled}
+              onUpdateRoom={updateRoomDimensions}
+              onUpdateCamera={updateCamera}
+              onSelectFurniture={selectFurniture}
+              onUpdatePosition={updateFurniturePosition}
+              onRotate={rotateFurniture}
+              onScale={adjustScale}
+              onRemoveFurniture={removeFurniture}
+              onUpdateTexture={updateFurnitureTexture}
+              onToggleDragging={toggleDragging}
+              onCaptureCameraState={captureCurrentCameraState}
+            />
+            
+            {/* Product Catalog */}
+            <ProductCatalog 
+              products={products}
+              isLoading={isLoading}
+              currentProductId={currentProductId}
+              onAddFurniture={addFurniture}
+              onApplyRoomPreset={applyRoomPreset}
+            />
+          </>
+        )}
       </main>
       
       {/* Save Project Modal */}
