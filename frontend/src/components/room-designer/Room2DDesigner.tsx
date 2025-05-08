@@ -336,14 +336,14 @@ const Room2DDesigner = ({
             </div>
           </div>        </div>
       </div>      {/* Room Layout Selection Panel */}
-      <div className="absolute top-72 left-4 bg-white p-4 rounded-lg shadow-md border border-gray-100 z-20">
+      <div className="absolute top-65 left-4 bg-white p-4 rounded-lg shadow-md border border-gray-200 z-20" style={{ maxHeight: '300px', width: '260px' }}>
         <h3 className="font-medium text-sm mb-3 flex items-center text-blue-800">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
           </svg>
           Select Room Layout
         </h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 overflow-y-auto pr-1 max-h-[220px]">
           {roomPresets.map((preset, index) => (
             <button 
               key={index}
@@ -356,12 +356,12 @@ const Room2DDesigner = ({
                 style={{ 
                   backgroundColor: preset.floorColor,
                   borderColor: preset.wallColor,
-                  width: `${Math.min(70, preset.width * 8)}px`,
-                  height: `${Math.min(60, preset.length * 6)}px`,
+                  width: `${Math.min(60, preset.width * 6)}px`,
+                  height: `${Math.min(50, preset.length * 5)}px`,
                 }}
               >
                 {/* Furniture icon to indicate scale */}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600 opacity-70" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-gray-600 opacity-70" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
               </div>
