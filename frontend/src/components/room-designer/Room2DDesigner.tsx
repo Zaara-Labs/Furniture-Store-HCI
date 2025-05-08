@@ -408,17 +408,15 @@ const Room2DDesigner = ({
             <p>Click rotate button to rotate</p>
           </div>
         </div>
-      )}
-
-      {/* Simple product catalog */}
-      <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-md border border-gray-100 z-20 max-h-[80%] overflow-y-auto" style={{ width: '250px' }}>
+      )}      {/* Simple product catalog */}
+      <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-md border border-gray-200 z-20" style={{ width: '250px', maxHeight: '400px' }}>
         <h3 className="font-medium text-sm mb-3 flex items-center text-blue-800">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
             <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z" />
           </svg>
           Add Furniture
         </h3>
-        <div className="grid grid-cols-1 gap-2">
+        <div className="grid grid-cols-1 gap-2 max-h-[320px] overflow-y-auto pr-1">
           {products.filter(product => product.model_3d_url).map((product) => (
             <button
               key={product.$id}
