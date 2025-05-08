@@ -9,6 +9,8 @@ import Room2DDesigner from '@/components/room-designer/Room2DDesigner';
 import ProductCatalog from '@/components/room-designer/ProductCatalog';
 import { useRoomDesigner } from '@/hooks/useRoomDesigner';
 import { captureCanvasScreenshot } from '@/utils/roomUtils';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import designProjectService from '@/services/designProjectService';
 
 // Define a basic User type to avoid using 'any'
@@ -29,8 +31,31 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
   const [projectName, setProjectName] = useState('Untitled Project');
   const [projectDescription, setProjectDescription] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-  const [viewMode, setViewMode] = useState<'2D' | '3D'>('2D'); // Start with 2D view by default
+  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');  const [viewMode, setViewMode] = useState<'2D' | '3D'>('2D'); // Start with 2D view by default
+
+  // Show guidance toast for the current view mode
+  useEffect(() => {
+    const toastId = toast.info(
+      viewMode === '2D'
+        ? 'Start by designing your room layout in 2D. Add furniture and arrange by dragging.'
+        : 'Rotate camera to explore from different angles. Switch to 2D to modify layout.',
+      {
+        position: "bottom-center",
+        autoClose: 8000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        className: viewMode === '2D' ? 'bg-blue-50 text-blue-800 border border-blue-100' : 'bg-green-50 text-green-800 border border-green-100',
+        toastId: `guidance-${viewMode}` // Prevent duplicate toasts
+      }
+    );
+    
+    return () => {
+      toast.dismiss(toastId);
+    };
+  }, [viewMode]);
   const {
     room,
     furniture,
@@ -214,27 +239,8 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
               </>
             )}          </button>
         </div>
-      </div>
-      
-      <main className="flex-grow flex flex-col md:flex-row pt-28">
-        {/* Workflow Guidance */}
-        {viewMode === '2D' && (
-          <div className="bg-blue-50 text-blue-800 text-sm px-4 py-3 border-b border-blue-100 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p>Start by designing your room layout in 2D. Set dimensions, add furniture, and arrange items by dragging. When you&apos;re ready to visualize in 3D, click the &quot;3D View&quot; button above.</p>
-          </div>
-        )}
-        
-        {viewMode === '3D' && (
-          <div className="bg-green-50 text-green-800 text-sm px-4 py-3 border-b border-green-100 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p>You&apos;re now in 3D view mode. You can rotate the camera, explore from different angles, and continue to make adjustments. Switch back to 2D view at any time to modify the layout.</p>
-          </div>
-        )}        {viewMode === '2D' ? (
+      </div>        <main className="flex-grow flex flex-col md:flex-row pt-28">
+        {viewMode === '2D' ? (
           <div className="h-[60vh] md:h-auto md:w-full relative bg-gray-100">
             <Room2DDesigner 
               room={room}
@@ -345,10 +351,24 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
               <p className="mt-2 text-sm text-red-600">
                 Failed to save project. Please try again.
               </p>
-            )}
-          </div>
+            )}          </div>
         </div>
       )}
+      
+      {/* Toast container for notifications */}
+      <ToastContainer
+        position="bottom-center"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        limit={2}
+      />
     </>
   );
 }
