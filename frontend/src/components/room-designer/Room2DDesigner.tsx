@@ -468,8 +468,44 @@ const Room2DDesigner = ({
               </div>
             </button>
           ))}
+        </div>      </div>      {/* Room Layout Selection */}
+      <div className="absolute bottom-24 right-4 bg-white p-4 rounded-lg shadow-md border border-gray-100 z-20" style={{ width: '250px' }}>
+        <h3 className="font-medium text-sm mb-3 flex items-center text-blue-800">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
+          </svg>
+          Select Room Layout
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          {roomPresets.map((preset, index) => (
+            <button 
+              key={index}
+              className="flex flex-col items-center p-2 border border-gray-200 hover:border-blue-400 rounded text-center hover:bg-blue-50 transition-all"
+              onClick={() => onApplyRoomPreset(preset)}
+              title={`Apply ${preset.name} layout (${preset.width}m × ${preset.length}m)`}
+            >
+              <div 
+                className="mb-1 rounded border-2 flex items-center justify-center relative"
+                style={{ 
+                  backgroundColor: preset.floorColor,
+                  borderColor: preset.wallColor,
+                  width: `${Math.min(70, preset.width * 8)}px`,
+                  height: `${Math.min(60, preset.length * 6)}px`,
+                }}
+              >
+                {/* Furniture icon to indicate scale */}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600 opacity-70" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <span className="text-xs font-medium truncate w-full">{preset.name}</span>
+              <span className="text-gray-500 text-xs">{preset.width}m × {preset.length}m</span>
+            </button>
+          ))}
         </div>
-      </div>      {/* Helper text */}
+      </div>
+
+      {/* Helper text */}
       <div className="absolute bottom-4 left-4 bg-white bg-opacity-80 text-xs rounded-full px-3 py-1.5 shadow-sm border border-gray-100 text-gray-700 z-20">
         <span>Click and drag to move items • Click to select • Choose room presets or customize dimensions</span>
       </div>
