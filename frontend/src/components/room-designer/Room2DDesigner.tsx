@@ -32,14 +32,12 @@ const Room2DDesigner = ({
   onAddFurniture,
   onRemoveFurniture,
   onApplyRoomPreset
-}: Room2DDesignerProps) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);  const [canvasWidth, setCanvasWidth] = useState(0);
+}: Room2DDesignerProps) => {  const canvasRef = useRef<HTMLCanvasElement>(null);  const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
   const [scale, setScale] = useState(30); // pixels per meter
   const [dragging, setDragging] = useState(false);
   const [dragItemIndex, setDragItemIndex] = useState<number | null>(null);
   const [dragStartPos, setDragStartPos] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
-  const [isRoomPresetsCollapsed, setIsRoomPresetsCollapsed] = useState(true);
 
   // Update canvas dimensions when component mounts or window resizes
   useEffect(() => {
@@ -269,8 +267,7 @@ const Room2DDesigner = ({
   };
 
   return (
-    <div className="relative h-full w-full">
-      <canvas
+    <div className="relative h-full w-full">      <canvas
         ref={canvasRef}
         className="absolute inset-0 z-10 cursor-move"
         onMouseDown={handleMouseDown}
@@ -315,8 +312,7 @@ const Room2DDesigner = ({
               onChange={(e) => onUpdateRoom({ length: Number(e.target.value) })}
               className="w-full accent-blue-600"
             />
-          </div>
-          <div className="grid grid-cols-2 gap-2 mt-2">
+          </div>          <div className="grid grid-cols-2 gap-2 mt-2">
             <div>
               <label className="text-xs text-gray-600 block mb-1">Wall Color</label>
               <div className="flex items-center">
@@ -338,58 +334,41 @@ const Room2DDesigner = ({
                   className="w-8 h-8 rounded border overflow-hidden cursor-pointer"                />
               </div>
             </div>
-          </div>
-            {/* Room Presets */}
-          <div className="mt-3 pt-3 border-t border-gray-100">
+          </div>        </div>
+      </div>      {/* Room Layout Selection Panel */}
+      <div className="absolute top-72 left-4 bg-white p-4 rounded-lg shadow-md border border-gray-100 z-20">
+        <h3 className="font-medium text-sm mb-3 flex items-center text-blue-800">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
+          </svg>
+          Select Room Layout
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          {roomPresets.map((preset, index) => (
             <button 
-              onClick={() => setIsRoomPresetsCollapsed(!isRoomPresetsCollapsed)}
-              className="font-medium text-xs mb-2 text-blue-800 flex items-center justify-between w-full hover:bg-blue-50 p-2 rounded transition-colors"
-              aria-expanded={!isRoomPresetsCollapsed}
-              aria-controls="room-presets-section"
+              key={index}
+              className="flex flex-col items-center p-2 border border-gray-200 hover:border-blue-400 rounded text-center hover:bg-blue-50 transition-all"
+              onClick={() => onApplyRoomPreset(preset)}
+              title={`Apply ${preset.name} layout (${preset.width}m × ${preset.length}m)`}
             >
-              <div className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-                <span>Room Presets</span>
-              </div>              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className={`h-3 w-3 transition-transform ${isRoomPresetsCollapsed ? '' : 'rotate-180'}`}
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
+              <div 
+                className="mb-1 rounded border-2 flex items-center justify-center relative"
+                style={{ 
+                  backgroundColor: preset.floorColor,
+                  borderColor: preset.wallColor,
+                  width: `${Math.min(70, preset.width * 8)}px`,
+                  height: `${Math.min(60, preset.length * 6)}px`,
+                }}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            
-            {/* Collapsible content */}
-            <div 
-              id="room-presets-section"
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                isRoomPresetsCollapsed ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'
-              }`}
-            >
-              <div className="grid grid-cols-1 gap-2 mt-2 max-h-[200px] overflow-y-auto pr-1">
-                {roomPresets.map((preset, index) => (
-                  <button 
-                    key={index}
-                    className="border border-gray-200 hover:border-blue-300 p-2 rounded text-left hover:bg-blue-50 transition-all"
-                    onClick={() => onApplyRoomPreset(preset)}
-                  >
-                    <div className="flex items-center">
-                      <span 
-                        className="w-3 h-3 rounded-full border border-gray-300 mr-1.5"
-                        style={{ backgroundColor: preset.wallColor }}
-                      ></span>
-                      <span className="text-xs font-medium">{preset.name}</span>
-                    </div>
-                    <p className="text-gray-500 text-xs mt-0.5">{preset.width}m × {preset.length}m space</p>
-                  </button>
-                ))}
+                {/* Furniture icon to indicate scale */}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600 opacity-70" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
               </div>
-            </div>
-          </div>
+              <span className="text-xs font-medium truncate w-full">{preset.name}</span>
+              <span className="text-gray-500 text-xs">{preset.width}m × {preset.length}m</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -468,42 +447,7 @@ const Room2DDesigner = ({
               </div>
             </button>
           ))}
-        </div>      </div>      {/* Room Layout Selection */}
-      <div className="absolute bottom-24 right-4 bg-white p-4 rounded-lg shadow-md border border-gray-100 z-20" style={{ width: '250px' }}>
-        <h3 className="font-medium text-sm mb-3 flex items-center text-blue-800">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
-          </svg>
-          Select Room Layout
-        </h3>
-        <div className="grid grid-cols-2 gap-3">
-          {roomPresets.map((preset, index) => (
-            <button 
-              key={index}
-              className="flex flex-col items-center p-2 border border-gray-200 hover:border-blue-400 rounded text-center hover:bg-blue-50 transition-all"
-              onClick={() => onApplyRoomPreset(preset)}
-              title={`Apply ${preset.name} layout (${preset.width}m × ${preset.length}m)`}
-            >
-              <div 
-                className="mb-1 rounded border-2 flex items-center justify-center relative"
-                style={{ 
-                  backgroundColor: preset.floorColor,
-                  borderColor: preset.wallColor,
-                  width: `${Math.min(70, preset.width * 8)}px`,
-                  height: `${Math.min(60, preset.length * 6)}px`,
-                }}
-              >
-                {/* Furniture icon to indicate scale */}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600 opacity-70" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <span className="text-xs font-medium truncate w-full">{preset.name}</span>
-              <span className="text-gray-500 text-xs">{preset.width}m × {preset.length}m</span>
-            </button>
-          ))}
-        </div>
-      </div>
+        </div>      </div>
 
       {/* Helper text */}
       <div className="absolute bottom-4 left-4 bg-white bg-opacity-80 text-xs rounded-full px-3 py-1.5 shadow-sm border border-gray-100 text-gray-700 z-20">
