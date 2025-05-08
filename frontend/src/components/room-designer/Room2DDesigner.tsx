@@ -18,7 +18,6 @@ interface Room2DDesignerProps {
   onAddFurniture: (product: Product) => void;
   onRemoveFurniture: (index: number) => void;
   onApplyRoomPreset: (preset: RoomSettings) => void;
-  onUpdateFurnitureTexture?: (index: number, textureUrl: string) => void;
 }
 
 const Room2DDesigner = ({
@@ -32,11 +31,8 @@ const Room2DDesigner = ({
   onRotateFurniture,
   onAddFurniture,
   onRemoveFurniture,
-  onApplyRoomPreset,
-  onUpdateFurnitureTexture
-}: Room2DDesignerProps) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvasWidth, setCanvasWidth] = useState(0);
+  onApplyRoomPreset
+}: Room2DDesignerProps) => {  const canvasRef = useRef<HTMLCanvasElement>(null);  const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
   const [scale, setScale] = useState(30); // pixels per meter
   const [dragging, setDragging] = useState(false);
@@ -271,8 +267,7 @@ const Room2DDesigner = ({
   };
 
   return (
-    <div className="relative h-full w-full">
-      <canvas
+    <div className="relative h-full w-full">      <canvas
         ref={canvasRef}
         className="absolute inset-0 z-10 cursor-move"
         onMouseDown={handleMouseDown}
@@ -317,8 +312,7 @@ const Room2DDesigner = ({
               onChange={(e) => onUpdateRoom({ length: Number(e.target.value) })}
               className="w-full accent-blue-600"
             />
-          </div>
-          <div className="grid grid-cols-2 gap-2 mt-2">
+          </div>          <div className="grid grid-cols-2 gap-2 mt-2">
             <div>
               <label className="text-xs text-gray-600 block mb-1">Wall Color</label>
               <div className="flex items-center">
@@ -337,15 +331,11 @@ const Room2DDesigner = ({
                   type="color" 
                   value={room.floorColor} 
                   onChange={(e) => onUpdateRoom({ floorColor: e.target.value })}
-                  className="w-8 h-8 rounded border overflow-hidden cursor-pointer"
-                />
+                  className="w-8 h-8 rounded border overflow-hidden cursor-pointer"                />
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Room Layout Selection Panel */}
+          </div>        </div>
+      </div>      {/* Room Layout Selection Panel */}
       <div className="absolute top-65 left-4 bg-white p-4 rounded-lg shadow-md border border-gray-200 z-20" style={{ maxHeight: '300px', width: '260px' }}>
         <h3 className="font-medium text-sm mb-3 flex items-center text-blue-800">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -384,7 +374,7 @@ const Room2DDesigner = ({
 
       {/* Selected item controls */}
       {selectedItemIndex !== null && (
-        <div className="absolute bottom-4 right-4 bg-white p-4 rounded-lg shadow-md border border-gray-100 z-20" style={{ width: '320px' }}>
+        <div className="absolute bottom-4 right-4 bg-white p-4 rounded-lg shadow-md border border-gray-100 z-20">
           <h3 className="font-medium text-sm mb-3 flex items-center text-blue-800">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
@@ -392,35 +382,16 @@ const Room2DDesigner = ({
             {furniture[selectedItemIndex]?.name || "Item Controls"}
           </h3>
           
-          <div className="flex space-x-3 mb-3 border-b border-gray-100 pb-3">
-            <button 
-              onClick={() => onRotateFurniture(selectedItemIndex, 'y', -45)} 
-              className="bg-gray-50 hover:bg-gray-100 p-2 rounded-full text-gray-700"
-              title="Rotate left"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M7.707 3.293a1 1 0 010 1.414L5.414 7H11a7 7 0 017 7v2a1 1 0 11-2 0v-2a5 5 0 00-5-5H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </button>
-            <button 
-              onClick={() => onRotateFurniture(selectedItemIndex, 'y', 45)} 
-              className="bg-gray-50 hover:bg-gray-100 p-2 rounded-full text-gray-700"
-              title="Rotate right"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M12.293 3.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 9H9a5 5 0 00-5 5v2a1 1 0 11-2 0v-2a7 7 0 017-7h5.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
+          <div className="flex space-x-3 mb-3">
             <button 
               onClick={handleRotate} 
               className="bg-gray-50 hover:bg-gray-100 p-2 rounded-full text-gray-700"
-              title="Rotate 90°"
+              title="Rotate"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
               </svg>
             </button>
-            <div className="border-r border-gray-200 mx-1"></div>
             <button 
               onClick={handleDelete} 
               className="bg-red-50 hover:bg-red-100 p-2 rounded-full text-red-600"
@@ -432,117 +403,12 @@ const Room2DDesigner = ({
             </button>
           </div>
           
-          {/* Position Controls */}
-          <div className="mb-3 border-b border-gray-100 pb-3">
-            <h4 className="text-xs text-gray-600 mb-2 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-              </svg>
-              Position
-            </h4>
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <div className="flex flex-col">
-                <label className="text-gray-500 mb-1">X</label>
-                <input 
-                  type="number" 
-                  value={furniture[selectedItemIndex].position[0].toFixed(2)} 
-                  onChange={(e) => {
-                    const newPos = [...furniture[selectedItemIndex].position] as [number, number, number];
-                    newPos[0] = Number(e.target.value);
-                    onUpdatePosition(selectedItemIndex, newPos);
-                  }}
-                  className="border rounded px-2 py-1"
-                  step="0.1"
-                  min="0"
-                  max={room.width}
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="text-gray-500 mb-1">Y</label>
-                <input 
-                  type="number" 
-                  value={furniture[selectedItemIndex].position[1].toFixed(2)} 
-                  onChange={(e) => {
-                    const newPos = [...furniture[selectedItemIndex].position] as [number, number, number];
-                    newPos[1] = Number(e.target.value);
-                    onUpdatePosition(selectedItemIndex, newPos);
-                  }}
-                  className="border rounded px-2 py-1"
-                  step="0.1"
-                  min="0"
-                  max={room.height}
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="text-gray-500 mb-1">Z</label>
-                <input 
-                  type="number" 
-                  value={furniture[selectedItemIndex].position[2].toFixed(2)} 
-                  onChange={(e) => {
-                    const newPos = [...furniture[selectedItemIndex].position] as [number, number, number];
-                    newPos[2] = Number(e.target.value);
-                    onUpdatePosition(selectedItemIndex, newPos);
-                  }}
-                  className="border rounded px-2 py-1"
-                  step="0.1"
-                  min="0"
-                  max={room.length}
-                />
-              </div>
-            </div>
-          </div>
-          
-          {/* Texture Options */}
-          {products.find(p => p.$id === furniture[selectedItemIndex].id)?.variation_texture_urls && (
-            <div className="mb-3">
-              <h4 className="text-xs text-gray-600 mb-2 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v11a3 3 0 106 0V4a2 2 0 00-2-2H4zm1 14a1 1 0 100-2 1 1 0 000 2zm5-1.757l4.9-4.9a2 2 0 000-2.828L13.485 5.1a2 2 0 00-2.828 0L10 5.757v8.486zM16 18H9.071l6-6H16a2 2 0 012 2v2a2 2 0 01-2 2z" clipRule="evenodd" />
-                </svg>
-                Available Options
-              </h4>
-              <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
-                {(() => {
-                  const currentProduct = products.find(p => p.$id === furniture[selectedItemIndex].id);
-                  if (!currentProduct || !currentProduct.variation_texture_urls || 
-                      !currentProduct.variation_names || 
-                      !currentProduct.variation_color_codes) return null;
-                  
-                  return currentProduct.variation_names.map((name, index) => {
-                    const textureUrl = currentProduct.variation_texture_urls?.[index];
-                    const colorCode = currentProduct.variation_color_codes?.[index];
-                    
-                    return (
-                      <button 
-                        key={index} 
-                        onClick={() => onUpdateFurnitureTexture && onUpdateFurnitureTexture(selectedItemIndex, textureUrl || '')}
-                        className={`flex items-center py-1.5 px-2.5 rounded-md transition-all ${
-                          furniture[selectedItemIndex].textureUrl === textureUrl
-                            ? "border-blue-800 bg-blue-50 shadow-sm"
-                            : "border border-gray-200 bg-white hover:border-blue-300"
-                        }`}
-                      >
-                        <span 
-                          className="w-3 h-3 rounded-full mr-2 flex-shrink-0 border border-gray-200" 
-                          style={{ backgroundColor: `#${colorCode}` }}
-                        ></span>
-                        <span className="text-xs font-medium truncate max-w-[80px]">{name}</span>
-                      </button>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          )}
-          
           <div className="text-xs text-gray-500">
-            <p>Drag to move item • Use position controls for precise placement</p>
-            <p>Rotation buttons for orientation • Click texture options to change appearance</p>
+            <p>Drag to move the item</p>
+            <p>Click rotate button to rotate</p>
           </div>
         </div>
-      )}
-
-      {/* Simple product catalog */}
+      )}      {/* Simple product catalog */}
       <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-md border border-gray-200 z-20" style={{ width: '250px', maxHeight: '400px' }}>
         <h3 className="font-medium text-sm mb-3 flex items-center text-blue-800">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -556,8 +422,7 @@ const Room2DDesigner = ({
               key={product.$id}
               onClick={() => onAddFurniture(product)}
               className="text-left p-2 hover:bg-blue-50 rounded flex items-center"
-            >
-              <div className="w-10 h-10 bg-gray-100 rounded flex-shrink-0 mr-2 flex items-center justify-center overflow-hidden">
+            >              <div className="w-10 h-10 bg-gray-100 rounded flex-shrink-0 mr-2 flex items-center justify-center overflow-hidden">
                 {product.images && product.images.length > 0 ? (
                   <Image 
                     src={product.images[0]} 
@@ -580,8 +445,7 @@ const Room2DDesigner = ({
               </div>
             </button>
           ))}
-        </div>
-      </div>
+        </div>      </div>
 
       {/* Helper text */}
       <div className="absolute bottom-4 left-4 bg-white bg-opacity-80 text-xs rounded-full px-3 py-1.5 shadow-sm border border-gray-100 text-gray-700 z-20">
