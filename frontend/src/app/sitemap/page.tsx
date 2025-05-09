@@ -2,7 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 // Define the sitemap structure
 type SitemapNode = {
@@ -47,11 +50,10 @@ const SitemapPage = () => {
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
         </svg>
-      ),
-      children: [
+      ),      children: [
         {
           title: "Product Detail",
-          path: "/product/[slug]",
+          path: "/product/sample-product",
           description: "View detailed information about a specific product"
         }
       ]
@@ -189,10 +191,8 @@ const SitemapPage = () => {
         { title: "Not Found", path: "/404", description: "Page not found error" }
       ]
     }
-  ];
-
-  // Render a sitemap node and its children
-  const renderNode = (node: SitemapNode, depth = 0, index = 0, isLast = false) => {
+  ];  // Render a sitemap node and its children
+  const renderNode = (node: SitemapNode, depth = 0) => {
     const isActive = pathname === node.path;
     const isOpen = openNodes[node.path] || false;
     const hasChildren = node.children && node.children.length > 0;
@@ -222,12 +222,17 @@ const SitemapPage = () => {
                 )}
               </div>
               
-              <div>
-                {/* Title with link */}
+              <div>                {/* Title with link */}
                 <div className="flex items-center">
-                  <Link href={node.path} className="text-lg font-medium text-gray-800 hover:text-amber-800 transition-colors">
-                    {node.title}
-                  </Link>
+                  {node.path.includes('[') || node.path.includes(']') ? (
+                    <span className="text-lg font-medium text-gray-800">
+                      {node.title}
+                    </span>
+                  ) : (
+                    <Link href={node.path} className="text-lg font-medium text-gray-800 hover:text-amber-800 transition-colors">
+                      {node.title}
+                    </Link>
+                  )}
                   
                   {/* Access badges */}
                   {node.isAuth && (
@@ -271,69 +276,87 @@ const SitemapPage = () => {
             )}
           </div>
         </div>
-        
-        {/* Children nodes */}
+          {/* Children nodes */}
         {hasChildren && isOpen && (
           <div className="ml-4">
-            {node.children!.map((child, childIndex) => 
-              renderNode(child, depth + 1, childIndex, childIndex === node.children!.length - 1)
+            {node.children!.map((child) => 
+              renderNode(child, depth + 1)
             )}
           </div>
         )}
       </div>
     );
   };
-
   return (
-    <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-16">
-        <h1 className="text-4xl font-serif font-medium text-gray-900 mb-4">
-          FABRIQUÉ Sitemap
-        </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          A comprehensive map of our website to help you navigate through all available pages and sections
-        </p>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
       
-      <div className="bg-white shadow-lg rounded-xl p-8 border border-gray-100">
-        <div className="flex justify-end mb-6">
-          <button 
-            onClick={() => {
-              // Expand or collapse all nodes
-              const allClosed = Object.values(openNodes).every(v => !v);
-              let newOpenNodes: Record<string, boolean> = {};
-              
-              if (allClosed) {
-                // Open all
-                siteStructure.forEach(node => {
-                  newOpenNodes[node.path] = true;
-                  if (node.children) {
-                    node.children.forEach(child => {
-                      newOpenNodes[child.path] = true;
-                    });
-                  }
-                });
-              }
-              
-              setOpenNodes(newOpenNodes);
-            }}
-            className="px-4 py-2 bg-amber-50 text-amber-800 rounded-md hover:bg-amber-100 transition-colors text-sm flex items-center"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-            {Object.values(openNodes).some(v => v) ? "Collapse All" : "Expand All"}
-          </button>
-        </div>
+      <main className="flex-grow">
+        {/* Hero Section */}
+        <section className="relative h-[60vh] bg-gray-900">
+          <div className="absolute inset-0">
+            <Image 
+              src="/images/landing/hero2.jpg" 
+              alt="Sitemap - FABRIQUÉ" 
+              fill
+              className="object-cover opacity-60"
+              priority
+            />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center mx-auto px-6">
+              <h1 className="text-4xl md:text-5xl font-serif font-medium text-white mb-4">Website Sitemap</h1>
+              <p className="text-xl text-white max-w-2xl">A comprehensive guide to navigate our website</p>
+            </div>
+          </div>
+        </section>
         
-        <div className="space-y-1">
-          {siteStructure.map((node, index) => renderNode(node, 0, index, index === siteStructure.length - 1))}
-        </div>
-      </div>
+        {/* Sitemap Content */}
+        <section className="py-16 bg-amber-50/80">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white shadow-lg rounded-xl p-8 border border-gray-100">
+              <div className="flex justify-end mb-6">
+                <button 
+                  onClick={() => {
+                    // Expand or collapse all nodes
+                    const allClosed = Object.values(openNodes).every(v => !v);
+                    const newOpenNodes: Record<string, boolean> = {};
+                    
+                    if (allClosed) {
+                      // Open all
+                      siteStructure.forEach(node => {
+                        newOpenNodes[node.path] = true;
+                        if (node.children) {
+                          node.children.forEach(child => {
+                            newOpenNodes[child.path] = true;
+                          });
+                        }
+                      });
+                    }
+                    
+                    setOpenNodes(newOpenNodes);
+                  }}
+                  className="px-4 py-2 bg-amber-50 text-amber-800 rounded-md hover:bg-amber-100 transition-colors text-sm flex items-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                  {Object.values(openNodes).some(v => v) ? "Collapse All" : "Expand All"}
+                </button>
+              </div>
+                <div className="space-y-1">
+                {siteStructure.map((node) => renderNode(node, 0))}
+              </div>
+            </div>
+            
+            <div className="mt-16 text-center text-sm text-white">
+              <p>Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+          </div>
+        </section>
+      </main>
       
-      <div className="mt-16 text-center text-sm text-gray-500">
-        <p>Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-      </div>
+      <Footer />
     </div>
   );
 };
