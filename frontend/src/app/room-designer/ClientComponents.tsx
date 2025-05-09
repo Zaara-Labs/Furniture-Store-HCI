@@ -5,9 +5,12 @@ import * as THREE from 'three';
 import { OrbitControls as StdLibOrbitControls } from 'three-stdlib';
 import { useRouter } from 'next/navigation';
 import RoomCanvas from '@/components/room-designer/RoomCanvas';
+import Room2DDesigner from '@/components/room-designer/Room2DDesigner';
 import ProductCatalog from '@/components/room-designer/ProductCatalog';
 import { useRoomDesigner } from '@/hooks/useRoomDesigner';
 import { captureCanvasScreenshot } from '@/utils/roomUtils';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import designProjectService from '@/services/designProjectService';
 
 // Define a basic User type to avoid using 'any'
@@ -28,8 +31,31 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
   const [projectName, setProjectName] = useState('Untitled Project');
   const [projectDescription, setProjectDescription] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-  
+  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');  const [viewMode, setViewMode] = useState<'2D' | '3D'>('2D'); // Start with 2D view by default
+
+  // Show guidance toast for the current view mode
+  useEffect(() => {
+    const toastId = toast.info(
+      viewMode === '2D'
+        ? 'Start by designing your room layout in 2D. Add furniture and arrange by dragging.'
+        : 'Rotate camera to explore from different angles. Switch to 2D to modify layout.',
+      {
+        position: "bottom-center",
+        autoClose: 8000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        className: viewMode === '2D' ? 'bg-blue-50 text-blue-800 border border-blue-100' : 'bg-green-50 text-green-800 border border-green-100',
+        toastId: `guidance-${viewMode}` // Prevent duplicate toasts
+      }
+    );
+    
+    return () => {
+      toast.dismiss(toastId);
+    };
+  }, [viewMode]);
   const {
     room,
     furniture,
@@ -145,8 +171,7 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
   };
 
   return (
-    <>
-      {/* Project actions header */}
+    <>      {/* Project actions header */}
       <div className="bg-white shadow-sm border-b px-4 py-2 fixed top-16 left-0 right-0 z-10 flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <h2 className="text-lg font-medium text-gray-800">
@@ -157,6 +182,30 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
               {currentProject.status}
             </span>
           )}
+          
+          {/* View Mode Toggle */}
+          <div className="flex items-center space-x-1 ml-6 bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setViewMode('2D')}
+              className={`text-xs px-3 py-1 rounded ${
+                viewMode === '2D' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              2D Design
+            </button>
+            <button
+              onClick={() => setViewMode('3D')}
+              className={`text-xs px-3 py-1 rounded ${
+                viewMode === '3D' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              3D View
+            </button>
+          </div>
         </div>
         <div className="flex items-center space-x-2">
           <button
@@ -188,42 +237,59 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
                 </svg>
                 Save
               </>
-            )}
-          </button>
+            )}          </button>
         </div>
-      </div>
-      
-      <main className="flex-grow flex flex-col md:flex-row pt-28">
-        {/* 3D Canvas */}
-        <RoomCanvas 
-          room={room}
-          furniture={furniture}
-          camera={camera}
-          products={products}
-          selectedItemIndex={selectedItemIndex}
-          cameraRef={cameraRef as React.RefObject<THREE.PerspectiveCamera>}
-          controlsRef={controlsRef as unknown as React.RefObject<StdLibOrbitControls>}
-          draggingEnabled={draggingEnabled}
-          onUpdateRoom={updateRoomDimensions}
-          onUpdateCamera={updateCamera}
-          onSelectFurniture={selectFurniture}
-          onUpdatePosition={updateFurniturePosition}
-          onRotate={rotateFurniture}
-          onScale={adjustScale}
-          onRemoveFurniture={removeFurniture}
-          onUpdateTexture={updateFurnitureTexture}
-          onToggleDragging={toggleDragging}
-          onCaptureCameraState={captureCurrentCameraState}
-        />
-        
-        {/* Product Catalog */}
-        <ProductCatalog 
-          products={products}
-          isLoading={isLoading}
-          currentProductId={currentProductId}
-          onAddFurniture={addFurniture}
-          onApplyRoomPreset={applyRoomPreset}
-        />
+      </div>        <main className="flex-grow flex flex-col md:flex-row pt-28">
+        {viewMode === '2D' ? (
+          <div className="h-[60vh] md:h-auto md:w-full relative bg-gray-100">
+            <Room2DDesigner 
+              room={room}
+              furniture={furniture}
+              products={products}
+              selectedItemIndex={selectedItemIndex}              
+              onUpdateRoom={updateRoomDimensions}
+              onSelectFurniture={selectFurniture}
+              onUpdatePosition={updateFurniturePosition}
+              onRotateFurniture={rotateFurniture}
+              onAddFurniture={addFurniture}
+              onRemoveFurniture={removeFurniture}
+              onApplyRoomPreset={applyRoomPreset}
+            />
+          </div>
+        ) : (
+          <>
+            {/* 3D Canvas */}
+            <RoomCanvas 
+              room={room}
+              furniture={furniture}
+              camera={camera}
+              products={products}
+              selectedItemIndex={selectedItemIndex}
+              cameraRef={cameraRef as React.RefObject<THREE.PerspectiveCamera>}
+              controlsRef={controlsRef as unknown as React.RefObject<StdLibOrbitControls>}
+              draggingEnabled={draggingEnabled}
+              onUpdateRoom={updateRoomDimensions}
+              onUpdateCamera={updateCamera}
+              onSelectFurniture={selectFurniture}
+              onUpdatePosition={updateFurniturePosition}
+              onRotate={rotateFurniture}
+              onScale={adjustScale}
+              onRemoveFurniture={removeFurniture}
+              onUpdateTexture={updateFurnitureTexture}
+              onToggleDragging={toggleDragging}
+              onCaptureCameraState={captureCurrentCameraState}
+            />
+            
+            {/* Product Catalog */}
+            <ProductCatalog 
+              products={products}
+              isLoading={isLoading}
+              currentProductId={currentProductId}
+              onAddFurniture={addFurniture}
+              onApplyRoomPreset={applyRoomPreset}
+            />
+          </>
+        )}
       </main>
       
       {/* Save Project Modal */}
@@ -285,10 +351,24 @@ export default function RoomDesignerContent({ projectId, user }: RoomDesignerCon
               <p className="mt-2 text-sm text-red-600">
                 Failed to save project. Please try again.
               </p>
-            )}
-          </div>
+            )}          </div>
         </div>
       )}
+      
+      {/* Toast container for notifications */}
+      <ToastContainer
+        position="bottom-center"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        limit={2}
+      />
     </>
   );
 }

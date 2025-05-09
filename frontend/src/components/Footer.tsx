@@ -82,7 +82,7 @@ export default function Footer() {
 
         <div className="pt-8 border-t border-gray-200">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm mb-4 md:mb-0">© 2025 FABRIQUÉ. All rights reserved.</p>
+            <p className="text-sm text-amber-800 mb-4 md:mb-0">© 2025 FABRIQUÉ. All rights reserved.</p>
             <div className="flex space-x-6">
               <Link href="/terms" className="text-sm hover:text-amber-800 transition-colors">Terms of Service</Link>
               <Link href="/privacy" className="text-sm hover:text-amber-800 transition-colors">Privacy Policy</Link>
